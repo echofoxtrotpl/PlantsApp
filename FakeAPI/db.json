@@ -1,0 +1,54 @@
+{
+    "sensors": [
+        {
+            "id": 1,
+            "familiarName": "czujnik w kuchni",
+            "bluetoothName": "XSHDSAY890",
+            "plantId": 1
+        },
+        {
+            "id": 2,
+            "familiarName": "czujnik w pokoju",
+            "bluetoothName": "ASSSEAY110",
+            "plantId": 2
+        }
+    ],
+    "plants": [
+        {
+            "id": 1,
+            "familiarName": "skrzydlokwiat",
+            "location": "kuchnia",
+            "minTemperature": 15.5,
+            "maxTemperature": 22.2,
+            "minHumidity": 0.4,
+            "maxHumidity": 0.7,
+            "sensorId": 1
+        },
+        {
+            "id": 2,
+            "familiarName": "kaktus",
+            "location": "pokój gościnny",
+            "minTemperature": 13,
+            "maxTemperature": 24.5,
+            "minHumidity": 0.1,
+            "maxHumidity": 0.4,
+            "sensorId": 2
+        }
+    ],
+    "records": [
+        {
+            "id": 1,
+            "temperature": 25.2,
+            "humidity": 5,
+            "updatedAt": "2012-04-21T18:25:43-05:00",
+            "sensorId": 1
+        },
+        {
+            "id": 2,
+            "temperature": 23.1,
+            "humidity": 0.3,
+            "updatedAt": "2012-04-21T18:25:43-05:00",
+            "sensorId": 2
+        }
+    ]
+}
