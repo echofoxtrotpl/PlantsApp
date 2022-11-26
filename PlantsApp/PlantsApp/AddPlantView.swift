@@ -10,10 +10,16 @@ import SwiftUI
 struct AddPlantView: View {
     @State private var plantName = ""
     @State private var maxHumidity = 0
-    @State private var maxInsolation = 0
+    @State private var minHumidity = 0
+    @State private var maxTemperature = 0
+    @State private var minTemperature = 0
     @State private var selectedSensorId = 0
     
     @State private var showingAddSensorSheet = false
+    
+    // Sensor
+    @State private var selectedSensorName = ""
+    @StateObject private var bleProvisioningViewModel = BleProvisioningViewModel()
 
     var percentages = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     @State private var sensors: [Sensor] = []
@@ -25,40 +31,72 @@ struct AddPlantView: View {
                     TextField("Przyjazna nazwa", text: $plantName)
                 }
                 Section(header: Text("Parametry")) {
+                    Picker("Minimalna wilgotość gleby", selection: $minHumidity) {
+                        ForEach(percentages, id: \.self) {
+                            Text($0, format: .percent)
+                        }
+                    }
                     Picker("Maksymalna wilgotość gleby", selection: $maxHumidity) {
-                            ForEach(percentages, id: \.self) {
-                                Text($0, format: .percent)
-                            }
-                        }
-                    Picker("Maksymalne nasłonecznienie", selection: $maxInsolation) {
-                            ForEach(percentages, id: \.self) {
-                                Text($0, format: .percent)
-                            }
-                        }
-                }
-                Section{
-                    Picker("Wybierz czujnik", selection: $selectedSensorId) {
-                        ForEach(sensors, id: \.id) { sensor in
-                            Text(sensor.familiarName)
+                        ForEach(percentages, id: \.self) {
+                            Text($0, format: .percent)
                         }
                     }
-                    .task {
-                        sensors = await getSensors()
+                    Picker("Minimalna temperatura", selection: $minTemperature) {
+                        ForEach(-20...maxTemperature, id: \.self) {
+                            Text($0, format: .number)
+                        }
                     }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                } header: {
-                    HStack{
-                        Text("Czujnik")
-                        Spacer()
-                        NavigationLink {
-                            AddSensorView()
-                        } label: {
-                            Image(systemName: "plus")
+                    Picker("Maksymalna temperatura", selection: $maxTemperature) {
+                        ForEach(minTemperature...50, id: \.self) {
+                            Text($0, format: .number)
                         }
                     }
                 }
                 
+                if bleProvisioningViewModel.foundDevicesNames.count > 0 {
+                    Picker(selection: $selectedSensorName) {
+                        ForEach(bleProvisioningViewModel.foundDevicesNames, id: \.self) { device in
+                            Text(device)
+                        }
+                    } label: {
+                        HStack {
+                            Text("Wybierz czujnik")
+                            Spacer()
+                            if bleProvisioningViewModel.connected {
+                                Button("Rozłącz") {
+                                    bleProvisioningViewModel.disconnect()
+                                }
+                                .foregroundColor(.red)
+                            } else {
+                                Button{
+                                    bleProvisioningViewModel.scanForDevices()
+                                } label: {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    
+                    if bleProvisioningViewModel.connected {
+                        NavigationLink {
+                            ConfigureSensorView(bleProvisioningViewModel: bleProvisioningViewModel)
+                        } label: {
+                            Text("Konfiguruj czujnik")
+                        }
+                    }
+                    
+                    if !selectedSensorName.isEmpty && !bleProvisioningViewModel.connected {
+                        Button("Nawiąż połączenie") {
+                            bleProvisioningViewModel.connectToDevice(selectedSensorName)
+                        }
+                    }
+                } else {
+                    Section("Wybierz czujnik") {
+                        Text("Wyszukiwanie urządzeń ...")
+                    }
+                }
             }
             .navigationTitle("Dodaj roślinę")
             .navigationBarTitleDisplayMode(.inline)

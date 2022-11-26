@@ -1,0 +1,4 @@
+
+target 'PlantsApp' do
+    pod 'ESPProvision'
+end

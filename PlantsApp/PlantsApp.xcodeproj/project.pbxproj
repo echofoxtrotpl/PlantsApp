@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		380C4B30B4F3E25046EB4BBD /* libPods-PlantsApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 35DE85BE65765548018B6BF6 /* libPods-PlantsApp.a */; };
 		9E044C56292111DB0068F5BF /* HttpClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E044C55292111DB0068F5BF /* HttpClient.swift */; };
 		9E044C58292138C60068F5BF /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E044C57292138C60068F5BF /* Models.swift */; };
 		9E24373A292007AB00797E6A /* AddPlantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E243739292007AB00797E6A /* AddPlantView.swift */; };
-		9E24373C292013FA00797E6A /* AddSensorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E24373B292013FA00797E6A /* AddSensorView.swift */; };
 		9E2437402920184D00797E6A /* BluetoothViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E24373F2920184D00797E6A /* BluetoothViewModel.swift */; };
 		9E56909A290528E30065B0D4 /* PlantsAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E569099290528E30065B0D4 /* PlantsAppApp.swift */; };
 		9E56909C290528E30065B0D4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E56909B290528E30065B0D4 /* ContentView.swift */; };
@@ -22,13 +22,17 @@
 		9E5690AE290549EC0065B0D4 /* TagPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5690AD290549EC0065B0D4 /* TagPill.swift */; };
 		9E5690B02905574D0065B0D4 /* PlantDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5690AF2905574D0065B0D4 /* PlantDetailedView.swift */; };
 		9E5690B22905721B0065B0D4 /* ProgressChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5690B12905721B0065B0D4 /* ProgressChart.swift */; };
+		9E7D2E322932419D006BCCED /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = 9E7D2E312932419D006BCCED /* Podfile */; };
+		9E7D2E3629324AC9006BCCED /* BleProvisioningViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */; };
+		9E7D2E3A29327939006BCCED /* ConfigureSensorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		35DE85BE65765548018B6BF6 /* libPods-PlantsApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PlantsApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		794AA7C5779D58C65BA5A4D9 /* Pods-PlantsApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PlantsApp.release.xcconfig"; path = "Target Support Files/Pods-PlantsApp/Pods-PlantsApp.release.xcconfig"; sourceTree = "<group>"; };
 		9E044C55292111DB0068F5BF /* HttpClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HttpClient.swift; sourceTree = "<group>"; };
 		9E044C57292138C60068F5BF /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E243739292007AB00797E6A /* AddPlantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPlantView.swift; sourceTree = "<group>"; };
-		9E24373B292013FA00797E6A /* AddSensorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSensorView.swift; sourceTree = "<group>"; };
 		9E24373F2920184D00797E6A /* BluetoothViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothViewModel.swift; sourceTree = "<group>"; };
 		9E569096290528E30065B0D4 /* PlantsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PlantsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E569099290528E30065B0D4 /* PlantsAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantsAppApp.swift; sourceTree = "<group>"; };
@@ -41,6 +45,10 @@
 		9E5690AD290549EC0065B0D4 /* TagPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPill.swift; sourceTree = "<group>"; };
 		9E5690AF2905574D0065B0D4 /* PlantDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantDetailedView.swift; sourceTree = "<group>"; };
 		9E5690B12905721B0065B0D4 /* ProgressChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressChart.swift; sourceTree = "<group>"; };
+		9E7D2E312932419D006BCCED /* Podfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; };
+		9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleProvisioningViewModel.swift; sourceTree = "<group>"; };
+		9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureSensorView.swift; sourceTree = "<group>"; };
+		9ECA8FDEDCE9E4168402823B /* Pods-PlantsApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PlantsApp.debug.xcconfig"; path = "Target Support Files/Pods-PlantsApp/Pods-PlantsApp.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,17 +56,38 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				380C4B30B4F3E25046EB4BBD /* libPods-PlantsApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9255C6F7C80534DE7805CA2E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				35DE85BE65765548018B6BF6 /* libPods-PlantsApp.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9BD554F0E79D3C79B366426D /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				9ECA8FDEDCE9E4168402823B /* Pods-PlantsApp.debug.xcconfig */,
+				794AA7C5779D58C65BA5A4D9 /* Pods-PlantsApp.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		9E56908D290528E30065B0D4 = {
 			isa = PBXGroup;
 			children = (
+				9E7D2E312932419D006BCCED /* Podfile */,
 				9E569098290528E30065B0D4 /* PlantsApp */,
 				9E569097290528E30065B0D4 /* Products */,
+				9BD554F0E79D3C79B366426D /* Pods */,
+				9255C6F7C80534DE7805CA2E /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -85,9 +114,10 @@
 				9E5690AF2905574D0065B0D4 /* PlantDetailedView.swift */,
 				9E5690B12905721B0065B0D4 /* ProgressChart.swift */,
 				9E243739292007AB00797E6A /* AddPlantView.swift */,
-				9E24373B292013FA00797E6A /* AddSensorView.swift */,
 				9E24373F2920184D00797E6A /* BluetoothViewModel.swift */,
 				9E044C55292111DB0068F5BF /* HttpClient.swift */,
+				9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */,
+				9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */,
 			);
 			path = PlantsApp;
 			sourceTree = "<group>";
@@ -107,6 +137,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9E5690A4290528E50065B0D4 /* Build configuration list for PBXNativeTarget "PlantsApp" */;
 			buildPhases = (
+				7BDAD821537357FF3DA3940F /* [CP] Check Pods Manifest.lock */,
 				9E569092290528E30065B0D4 /* Sources */,
 				9E569093290528E30065B0D4 /* Frameworks */,
 				9E569094290528E30065B0D4 /* Resources */,
@@ -158,12 +189,38 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9E7D2E322932419D006BCCED /* Podfile in Resources */,
 				9E5690A1290528E50065B0D4 /* Preview Assets.xcassets in Resources */,
 				9E56909E290528E50065B0D4 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		7BDAD821537357FF3DA3940F /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-PlantsApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		9E569092290528E30065B0D4 /* Sources */ = {
@@ -174,14 +231,15 @@
 				9E5690AA290531B60065B0D4 /* PlantDemoCard.swift in Sources */,
 				9E5690A829052FFB0065B0D4 /* RoundedCorner.swift in Sources */,
 				9E24373A292007AB00797E6A /* AddPlantView.swift in Sources */,
+				9E7D2E3629324AC9006BCCED /* BleProvisioningViewModel.swift in Sources */,
 				9E2437402920184D00797E6A /* BluetoothViewModel.swift in Sources */,
 				9E5690B02905574D0065B0D4 /* PlantDetailedView.swift in Sources */,
 				9E044C56292111DB0068F5BF /* HttpClient.swift in Sources */,
 				9E56909C290528E30065B0D4 /* ContentView.swift in Sources */,
 				9E5690B22905721B0065B0D4 /* ProgressChart.swift in Sources */,
 				9E56909A290528E30065B0D4 /* PlantsAppApp.swift in Sources */,
+				9E7D2E3A29327939006BCCED /* ConfigureSensorView.swift in Sources */,
 				9E044C58292138C60068F5BF /* Models.swift in Sources */,
-				9E24373C292013FA00797E6A /* AddSensorView.swift in Sources */,
 				9E5690AE290549EC0065B0D4 /* TagPill.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -305,6 +363,7 @@
 		};
 		9E5690A5290528E50065B0D4 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9ECA8FDEDCE9E4168402823B /* Pods-PlantsApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -337,6 +396,7 @@
 		};
 		9E5690A6290528E50065B0D4 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 794AA7C5779D58C65BA5A4D9 /* Pods-PlantsApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

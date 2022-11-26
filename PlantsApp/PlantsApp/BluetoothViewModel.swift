@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreBluetooth
+import ESPProvision
 
 class BluetoothViewModel : NSObject, ObservableObject {
     private var centralManager: CBCentralManager?
@@ -85,7 +86,8 @@ extension BluetoothViewModel: CBPeripheralDelegate {
         for characteristic in characteristics {
             if characteristic.properties.contains(.read) {
                 outputCharacteristic = characteristic
-            } else if characteristic.properties.contains(.write){
+            }
+            if characteristic.properties.contains(.write){
                 inputCharacteristic = characteristic
             }
         }
