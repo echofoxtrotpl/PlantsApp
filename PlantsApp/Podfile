@@ -1,4 +1,5 @@
 
 target 'PlantsApp' do
     pod 'ESPProvision'
+    pod 'SwiftJWT', '~> 3.6'
 end

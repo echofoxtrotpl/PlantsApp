@@ -45,6 +45,9 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
                           "\n\tPlease reset to factory and retry provisioning",
                      (*reason == WIFI_PROV_STA_AUTH_ERROR) ? "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
+
+            ESP_LOGI(TAG, "Failed to connect with provisioned AP, reseting provisioned credentials");
+            wifi_prov_mgr_reset_sm_state_on_failure();
             break;
         }
         case WIFI_PROV_CRED_SUCCESS:
@@ -103,7 +106,7 @@ esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ss
     {
         ESP_LOGI(TAG, "Received data: %.*s", inlen, (char *)inbuf);
     }
-    char response[] = "SUCCESS";
+    char response[] = "Konfiguracja podstawowa pomyślna";
     *outbuf = (uint8_t *)strdup(response);
     if (*outbuf == NULL)
     {
@@ -135,6 +138,9 @@ void app_main(void)
     /* Initialize the event loop */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     wifi_event_group = xEventGroupCreate();
+
+    /* will be removed */
+    wifi_prov_mgr_reset_sm_state_on_failure();
 
     /* Register our event handler for Wi-Fi, IP and Provisioning related events */
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));

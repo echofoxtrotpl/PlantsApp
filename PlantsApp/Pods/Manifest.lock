@@ -1,26 +1,55 @@
 PODS:
+  - BlueCryptor (1.0.32)
+  - BlueECC (1.2.5)
+  - BlueRSA (1.0.200)
   - Curve25519 (1.1)
   - ESPProvision (2.1.0):
     - ESPProvision/Core (= 2.1.0)
   - ESPProvision/Core (2.1.0):
     - Curve25519 (~> 1.1.0)
     - SwiftProtobuf (~> 1.5.0)
+  - KituraContracts (1.2.1):
+    - LoggerAPI (~> 1.7)
+  - LoggerAPI (1.9.200):
+    - Logging (~> 1.1)
+  - Logging (1.4.0)
+  - SwiftJWT (3.6.200):
+    - BlueCryptor (~> 1.0)
+    - BlueECC (~> 1.1)
+    - BlueRSA (~> 1.0)
+    - KituraContracts (~> 1.2)
+    - LoggerAPI (~> 1.7)
   - SwiftProtobuf (1.5.0)
 
 DEPENDENCIES:
   - ESPProvision
+  - SwiftJWT (~> 3.6)
 
 SPEC REPOS:
   trunk:
+    - BlueCryptor
+    - BlueECC
+    - BlueRSA
     - Curve25519
     - ESPProvision
+    - KituraContracts
+    - LoggerAPI
+    - Logging
+    - SwiftJWT
     - SwiftProtobuf
 
 SPEC CHECKSUMS:
+  BlueCryptor: b0aee3d9b8f367b49b30de11cda90e1735571c24
+  BlueECC: 0d18e93347d3ec6d41416de21c1ffa4d4cd3c2cc
+  BlueRSA: dfeef51db96bcc4edec654956c1581adbda4e6a3
   Curve25519: 5f595e906bd962248665978e2992a1fe96e2d831
   ESPProvision: ba3a1d6d09105ca6fd6dc2dfee779d2c924b525c
+  KituraContracts: e845e60dc8627ad0a76fa55ef20a45451d8f830b
+  LoggerAPI: ad9c4a6f1e32f518fdb43a1347ac14d765ab5e3d
+  Logging: beeb016c9c80cf77042d62e83495816847ef108b
+  SwiftJWT: 88c412708f58c169d431d344c87bc79a87c830ae
   SwiftProtobuf: 241400280f912735c1e1b9fe675fdd2c6c4d42e2
 
-PODFILE CHECKSUM: ca72cc7ebe41d4bf16f6e77f9d9943d842c5fada
+PODFILE CHECKSUM: 5d2ff8ee55fb36f85d5bca71dc45fb8aeb251083
 
 COCOAPODS: 1.11.3

@@ -91,6 +91,7 @@ struct AddPlantView: View {
                         Button("Nawiąż połączenie") {
                             bleProvisioningViewModel.connectToDevice(selectedSensorName)
                         }
+                        .frame(maxWidth: .infinity, alignment: .center)
                     }
                 } else {
                     Section("Wybierz czujnik") {
