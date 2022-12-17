@@ -8,46 +8,44 @@
 import SwiftUI
 
 struct AddPlantView: View {
-    @State private var plantName = ""
-    @State private var maxHumidity = 0
-    @State private var minHumidity = 0
-    @State private var maxTemperature = 0
-    @State private var minTemperature = 0
-    @State private var selectedSensorId = 0
+    @Environment(\.dismiss) var dismiss
     
-    @State private var showingAddSensorSheet = false
+    @State private var plantName = ""
+    @State private var maxHumidity = 100
+    @State private var minHumidity = 0
+    @State private var maxTemperature: Double = 0.0
+    @State private var minTemperature: Double = 0.0
+    @State private var location = ""
     
     // Sensor
     @State private var selectedSensorName = ""
     @StateObject private var bleProvisioningViewModel = BleProvisioningViewModel()
-
-    var percentages = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    @State private var sensors: [Sensor] = []
     
     var body: some View {
         NavigationView{
             Form {
-                Section(header: Text("Nadaj nazwę")){
+                Section(header: Text("O roślinie")){
                     TextField("Przyjazna nazwa", text: $plantName)
+                    TextField("Lokalizacja", text: $location)
                 }
                 Section(header: Text("Parametry")) {
-                    Picker("Minimalna wilgotość gleby", selection: $minHumidity) {
-                        ForEach(percentages, id: \.self) {
+                    Picker("Minimalna wilgotość", selection: $minHumidity) {
+                        ForEach(0...maxHumidity, id: \.self) {
                             Text($0, format: .percent)
                         }
                     }
-                    Picker("Maksymalna wilgotość gleby", selection: $maxHumidity) {
-                        ForEach(percentages, id: \.self) {
+                    Picker("Maksymalna wilgotość", selection: $maxHumidity) {
+                        ForEach(minHumidity...100, id: \.self) {
                             Text($0, format: .percent)
                         }
                     }
                     Picker("Minimalna temperatura", selection: $minTemperature) {
-                        ForEach(-20...maxTemperature, id: \.self) {
+                        ForEach(Array(stride(from: -20.0, to: maxTemperature, by: 0.1)), id: \.self) {
                             Text($0, format: .number)
                         }
                     }
                     Picker("Maksymalna temperatura", selection: $maxTemperature) {
-                        ForEach(minTemperature...50, id: \.self) {
+                        ForEach(Array(stride(from: minTemperature, to: 50.0, by: 0.1)), id: \.self) {
                             Text($0, format: .number)
                         }
                     }
@@ -101,7 +99,24 @@ struct AddPlantView: View {
             }
             .navigationTitle("Dodaj roślinę")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                Button("Zapisz"){
+                    Task {
+                        let success = await addPlant(createPlant())
+                        if (success) {
+                            dismiss()
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .disabled(selectedSensorName.isEmpty || plantName.isEmpty || !bleProvisioningViewModel.wifiSettingsApplied
+                          || location.isEmpty)
+            }
         }
+    }
+    
+    func createPlant() -> Plant {
+        return Plant(familiarName: plantName, location: location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: maxTemperature, minTemperature: minTemperature, sensorName: selectedSensorName)
     }
 }
 

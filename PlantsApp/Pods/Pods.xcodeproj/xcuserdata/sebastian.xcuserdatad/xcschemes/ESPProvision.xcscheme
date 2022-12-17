@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "3C1C8F87E47BFEB59C06CD44C01C2F24"
-               BuildableName = "libESPProvision.a"
+               BuildableName = "ESPProvision.framework"
                BlueprintName = "ESPProvision"
                ReferencedContainer = "container:Pods.xcodeproj">
             </BuildableReference>

@@ -1,4 +1,4 @@
-module ESPProvision {
+framework module ESPProvision {
   umbrella header "ESPProvision-umbrella.h"
 
   export *

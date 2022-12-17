@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var showingAddPlantSheet = false
     @State private var plants: [Plant] = []
+    @StateObject var mqttManager: MQTTManager = MQTTManager()
     
     var body: some View {
         NavigationView {
@@ -28,14 +29,17 @@ struct ContentView: View {
                     .frame(height: 40)
                     .cornerRadius(13)
                     .padding()
-                    ScrollView() {
+                    ScrollView {
                         ForEach(plants, id: \.id) { plant in
-                            PlantDemoCard(plant: plant)
-                        }
-                        .task {
-                            plants = await getPlants()
+                            PlantDemoCard(plant: plant, mqttManager: mqttManager)
                         }
                     }
+                    .task{
+                        plants = await getPlants()
+                    }
+                }
+                .refreshable {
+                    plants = await getPlants()
                 }
                 .navigationTitle("Twoje rośliny")
                 .toolbar {
@@ -57,6 +61,10 @@ struct ContentView: View {
             
         }
         .accentColor(.white)
+        .onAppear{
+            mqttManager.initializeMQTT(host: "mqtt.eclipseprojects.io", identifier: UUID().uuidString)
+            mqttManager.connect()
+        }
     }
 }
 

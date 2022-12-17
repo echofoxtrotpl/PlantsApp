@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		380C4B30B4F3E25046EB4BBD /* libPods-PlantsApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 35DE85BE65765548018B6BF6 /* libPods-PlantsApp.a */; };
+		75704449B21821BDE31BD3D1 /* Pods_PlantsApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FEEB937427D3B6DB8B78906E /* Pods_PlantsApp.framework */; };
 		9E044C56292111DB0068F5BF /* HttpClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E044C55292111DB0068F5BF /* HttpClient.swift */; };
 		9E044C58292138C60068F5BF /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E044C57292138C60068F5BF /* Models.swift */; };
 		9E24373A292007AB00797E6A /* AddPlantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E243739292007AB00797E6A /* AddPlantView.swift */; };
@@ -22,13 +22,13 @@
 		9E5690AE290549EC0065B0D4 /* TagPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5690AD290549EC0065B0D4 /* TagPill.swift */; };
 		9E5690B02905574D0065B0D4 /* PlantDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5690AF2905574D0065B0D4 /* PlantDetailedView.swift */; };
 		9E5690B22905721B0065B0D4 /* ProgressChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5690B12905721B0065B0D4 /* ProgressChart.swift */; };
+		9E6986CF29367B9000226701 /* MqttViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6986CE29367B9000226701 /* MqttViewModel.swift */; };
 		9E7D2E322932419D006BCCED /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = 9E7D2E312932419D006BCCED /* Podfile */; };
 		9E7D2E3629324AC9006BCCED /* BleProvisioningViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */; };
 		9E7D2E3A29327939006BCCED /* ConfigureSensorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		35DE85BE65765548018B6BF6 /* libPods-PlantsApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PlantsApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		794AA7C5779D58C65BA5A4D9 /* Pods-PlantsApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PlantsApp.release.xcconfig"; path = "Target Support Files/Pods-PlantsApp/Pods-PlantsApp.release.xcconfig"; sourceTree = "<group>"; };
 		9E044C55292111DB0068F5BF /* HttpClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HttpClient.swift; sourceTree = "<group>"; };
 		9E044C57292138C60068F5BF /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -45,10 +45,12 @@
 		9E5690AD290549EC0065B0D4 /* TagPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPill.swift; sourceTree = "<group>"; };
 		9E5690AF2905574D0065B0D4 /* PlantDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantDetailedView.swift; sourceTree = "<group>"; };
 		9E5690B12905721B0065B0D4 /* ProgressChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressChart.swift; sourceTree = "<group>"; };
+		9E6986CE29367B9000226701 /* MqttViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MqttViewModel.swift; sourceTree = "<group>"; };
 		9E7D2E312932419D006BCCED /* Podfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; };
 		9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleProvisioningViewModel.swift; sourceTree = "<group>"; };
 		9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureSensorView.swift; sourceTree = "<group>"; };
 		9ECA8FDEDCE9E4168402823B /* Pods-PlantsApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PlantsApp.debug.xcconfig"; path = "Target Support Files/Pods-PlantsApp/Pods-PlantsApp.debug.xcconfig"; sourceTree = "<group>"; };
+		FEEB937427D3B6DB8B78906E /* Pods_PlantsApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PlantsApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,7 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				380C4B30B4F3E25046EB4BBD /* libPods-PlantsApp.a in Frameworks */,
+				75704449B21821BDE31BD3D1 /* Pods_PlantsApp.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,7 +68,7 @@
 		9255C6F7C80534DE7805CA2E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				35DE85BE65765548018B6BF6 /* libPods-PlantsApp.a */,
+				FEEB937427D3B6DB8B78906E /* Pods_PlantsApp.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -118,6 +120,7 @@
 				9E044C55292111DB0068F5BF /* HttpClient.swift */,
 				9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */,
 				9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */,
+				9E6986CE29367B9000226701 /* MqttViewModel.swift */,
 			);
 			path = PlantsApp;
 			sourceTree = "<group>";
@@ -141,6 +144,7 @@
 				9E569092290528E30065B0D4 /* Sources */,
 				9E569093290528E30065B0D4 /* Frameworks */,
 				9E569094290528E30065B0D4 /* Resources */,
+				2A2B914C5AD67B0A26F589FC /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -198,6 +202,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		2A2B914C5AD67B0A26F589FC /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-PlantsApp/Pods-PlantsApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-PlantsApp/Pods-PlantsApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PlantsApp/Pods-PlantsApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		7BDAD821537357FF3DA3940F /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -232,6 +253,7 @@
 				9E5690A829052FFB0065B0D4 /* RoundedCorner.swift in Sources */,
 				9E24373A292007AB00797E6A /* AddPlantView.swift in Sources */,
 				9E7D2E3629324AC9006BCCED /* BleProvisioningViewModel.swift in Sources */,
+				9E6986CF29367B9000226701 /* MqttViewModel.swift in Sources */,
 				9E2437402920184D00797E6A /* BluetoothViewModel.swift in Sources */,
 				9E5690B02905574D0065B0D4 /* PlantDetailedView.swift in Sources */,
 				9E044C56292111DB0068F5BF /* HttpClient.swift in Sources */,

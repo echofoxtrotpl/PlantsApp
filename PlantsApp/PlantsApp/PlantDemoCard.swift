@@ -9,12 +9,13 @@ import SwiftUI
 
 struct PlantDemoCard: View {
     var plant: Plant
+    @ObservedObject var mqttManager: MQTTManager
 
     var body: some View {
         HStack{
             Spacer()
             NavigationLink {
-                PlantDetailedView(plant: plant)
+                PlantDetailedView(mqttManager: mqttManager, plant: plant)
             } label: {
                 ZStack{
                     RoundedCorner(radius: 45, corners: [.bottomLeft, .topLeft])
@@ -37,11 +38,21 @@ struct PlantDemoCard: View {
                             .padding()
                             Spacer()
                             VStack{
-                                Spacer()
                                 Image(systemName: "arrow.forward")
                                     .foregroundColor(.white)
                                     .padding(.vertical)
                                     .padding(.trailing)
+                                Spacer()
+                                Button{
+                                    Task {
+                                        await removePlant(_: plant.id!)
+                                    }
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .padding(.vertical)
+                                .padding(.trailing)
                             }
                         }
                     }
@@ -55,6 +66,6 @@ struct PlantDemoCard: View {
 
 struct PlantDemoCard_Previews: PreviewProvider {
     static var previews: some View {
-        PlantDemoCard(plant: Plant(id: 1, familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22, minTemperature: 18, sensorId: 1))
+        PlantDemoCard(plant: Plant(familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22, minTemperature: 18, sensorName: ""), mqttManager: MQTTManager())
     }
 }

@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1F290C3C4F88B54AC2980C8DA72DBE19"
-               BuildableName = "libCurve25519.a"
+               BuildableName = "Curve25519.framework"
                BlueprintName = "Curve25519"
                ReferencedContainer = "container:Pods.xcodeproj">
             </BuildableReference>

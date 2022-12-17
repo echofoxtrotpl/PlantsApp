@@ -8,27 +8,33 @@
 import Foundation
 
 struct Plant: Codable {
-    var id: Int
+    var id: Int?
     var familiarName: String
     var location: String
-    var maxHumidity: Float
-    var minHumidity: Float
-    var maxTemperature: Float
-    var minTemperature: Float
-    var sensorId: Int
+    var maxHumidity: Int
+    var minHumidity: Int
+    var maxTemperature: Double
+    var minTemperature: Double
+    var sensorName: String
 }
 
-struct Sensor: Codable {
-    var id: Int
-    var familiarName: String
-    var bluetoothName: String
-    var plantId: Int
-}
-
-struct Record: Codable {
-    var id: Int
-    var temperature: Float
-    var humidity: Float
+struct RecordStruct: Codable {
+    var temperature: Double 
+    var humidity: Int
     var updatedAt: Date
-    var sensorId: Int
+    var sensorName: String
+}
+
+class Record: ObservableObject {
+    var id: Int = 0
+    @Published var temperature: Double = 0.0
+    @Published var humidity: Int = 0
+    @Published var updatedAt: Date = Date.now
+    @Published var sensorName: String = ""
+}
+
+struct MqttMessage: Codable {
+    var sensorName: String
+    var humidity: Int?
+    var temperature: Double?
 }

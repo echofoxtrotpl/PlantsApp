@@ -1,3 +1,3 @@
-idf_component_register(SRCS "main3.c" "main.c"
+idf_component_register(SRCS "main2.c" "main3.c" "main.c"
                     INCLUDE_DIRS "."
                     )

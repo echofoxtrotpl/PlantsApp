@@ -15,8 +15,7 @@ import ESPProvision
     @Published var foundDevicesNames: [String] = []
     @Published var connected = false
     @Published var wifiSettingsResponse = ""
-    @Published var basicSettingsResponse = ""
-    @Published var deviceId = ""
+    @Published var wifiSettingsApplied = false
     
     init() {
         scanForDevices()
@@ -29,6 +28,7 @@ import ESPProvision
                     switch status {
                     case .success:
                         self.wifiSettingsResponse = "Konfiguracja wifi pomyślna"
+                        self.wifiSettingsApplied = true
                         break
                     case .configApplied:
                         break
@@ -62,23 +62,9 @@ import ESPProvision
             case .connected:
                 self.connected = true
                 self.provisionedDevice = device
-                self.deviceId = device.name.sha256
                 break
             default:
                 break
-            }
-        }
-    }
-    
-    func sendBasicConfigToDevice(_ config: BasicConfiguration) {
-        let jsonData = try? JSONEncoder().encode(config)
-        if let data = jsonData {
-            if let device = provisionedDevice {
-                device.sendData(path: "custom-data", data: data) { res, _ in
-                    DispatchQueue.main.async {
-                        self.basicSettingsResponse = String(data: res!, encoding: .utf8)!
-                    }
-                }
             }
         }
     }

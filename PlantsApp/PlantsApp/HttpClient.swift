@@ -7,7 +7,7 @@
 
 import Foundation
 
-let baseUrl = "http://127.0.0.1:3000/"
+let baseUrl = "http://192.168.20.101:3000/"
 
 func getPlants() async -> [Plant] {
     var response: [Plant] = []
@@ -30,48 +30,37 @@ func getPlants() async -> [Plant] {
     return response
 }
 
-func getCurrentRecord(sensorId: Int) async -> Record {
-    var response: Record = Record(id: 0, temperature: 0, humidity: 0, updatedAt: Date.now, sensorId: 0)
-    
-    guard let url = URL(string: baseUrl + "records") else {
+func addPlant(_ plant: Plant) async -> Bool{
+    guard let url = URL(string: baseUrl + "plants") else {
         print("Invalid URL")
-        return response
+        return false
     }
+    
+    var request = URLRequest(url: url)
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.httpMethod = "POST"
     
     do {
-        let (data, _) = try await URLSession.shared.data(from: url)
-        
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        
-        if let decodedResponse = try? decoder.decode([Record].self, from: data) {
-            response = decodedResponse[0]
-            print(response)
-        }
+        let encoded = try JSONEncoder().encode(plant)
+        let (_, _) = try await URLSession.shared.upload(for: request, from: encoded)
+        return true
     } catch {
-        print("Invalid data")
+        print("Checkout failed.")
+        return false
     }
-    
-    return response
 }
 
-func getSensors() async -> [Sensor] {
-    var response: [Sensor] = []
-    
-    guard let url = URL(string: baseUrl + "sensors") else {
+func removePlant(_ plantId: Int) async -> Void{
+    guard let url = URL(string: baseUrl + "plants/\(plantId)") else {
         print("Invalid URL")
-        return response
+        return
     }
     
-    do {
-        let (data, _) = try await URLSession.shared.data(from: url)
+    var request = URLRequest(url: url)
+    request.httpMethod = "DELETE"
+    
+    URLSession.shared.dataTask(with: request) { (data, res, err) in
         
-        if let decodedResponse = try? JSONDecoder().decode([Sensor].self, from: data) {
-            response = decodedResponse
-        }
-    } catch {
-        print("Invalid data")
-    }
-    
-    return response
+    }.resume()
 }
+

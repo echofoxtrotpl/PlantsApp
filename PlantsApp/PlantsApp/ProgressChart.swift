@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct ProgressChart: View {
-    var progress: Float = 0.71
-    var maxValue: Float = 0.7
-    var minValue: Float = 0.3
+    var progress: Double = 0.71
+    var maxValue: Double = 0.7
+    var minValue: Double = 0.3
     
     var body: some View {
         ZStack {
@@ -24,6 +24,7 @@ struct ProgressChart: View {
                 .stroke(style: StrokeStyle(lineWidth: 10.0, lineCap: .round, lineJoin: .round))
                 .foregroundColor((progress > maxValue || progress < minValue) ? .red : .green)
                 .rotationEffect(Angle(degrees: 270.0))
+                .animation(.easeInOut, value: progress)
             Text(String(format: "%.0f %%", min(progress, 1.0)*100.0))
                 .font(.title2)
                 .bold()

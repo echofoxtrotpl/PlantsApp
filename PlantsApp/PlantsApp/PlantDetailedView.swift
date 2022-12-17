@@ -8,18 +8,26 @@
 import SwiftUI
 
 struct PlantDetailedView: View {
+    private var record: RecordStruct {
+        get {
+            mqttManager.records[plant.sensorName] ?? RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date.now, sensorName: plant.sensorName)
+        }
+    }
+    private var isTempExceeded: Bool {
+        get {
+            record.temperature > plant.maxTemperature ||
+            record.temperature < plant.minTemperature
+        }
+    }
+    @ObservedObject var mqttManager: MQTTManager
+    
     var plant: Plant
-    @State private var isTempExceeded = false
-    @State private var record: Record = Record(id: 0, temperature: 20, humidity: 0.3, updatedAt: Date.now, sensorId: 1)
     
     var body: some View {
         ZStack{
             Color(red: 182, green: 224, blue: 189)
                 .ignoresSafeArea()
-                .task {
-                    record = await getCurrentRecord(sensorId: plant.sensorId)
-                    isTempExceeded = record.temperature > plant.maxTemperature || record.temperature < plant.minTemperature
-                }
+
             VStack{
                 HStack{
                     ZStack{
@@ -58,23 +66,22 @@ struct PlantDetailedView: View {
                                     .padding(.bottom, 5)
                             }
                             HStack{
-                                Text("Nawodnienie")
+                                Text("Wilgotność")
                                 Spacer()
-                                ProgressChart(progress: record.humidity, maxValue: plant.maxHumidity, minValue: plant.minHumidity)
+                                ProgressChart(progress: Double(record.humidity)/100, maxValue: Double(plant.maxHumidity)/100, minValue: Double(plant.minHumidity)/100)
                                     .frame(width: 90, height: 90)
                             }
                             HStack{
                                 Text("Temperatura")
                                 Spacer()
-                                //to change
                                 if isTempExceeded {
                                     Image(systemName: "exclamationmark.triangle")
                                         .foregroundColor(.red)
                                 }
                                 Text(String(format: "%.1f°C", record.temperature))
                                     .foregroundColor(isTempExceeded ? .red : .black)
-                                
                             }
+                            .animation(.easeInOut, value: record.temperature)
                         }
                         .padding(30)
                         VStack(alignment: .leading, spacing: 30){
@@ -85,9 +92,9 @@ struct PlantDetailedView: View {
                                     .padding(.bottom, 5)
                             }
                             HStack{
-                                Text("Nawodnienie")
+                                Text("Wilgotność")
                                 Spacer()
-                                Text("\(String(format: "%.0f", plant.minHumidity * 100))% - \(String(format: "%.0f", plant.maxHumidity * 100))%")
+                                Text("\(plant.minHumidity)% - \(plant.maxHumidity)%")
                             }
                             HStack{
                                 Text("Temperatura")
@@ -110,6 +117,6 @@ struct PlantDetailedView: View {
 
 struct PlantDetailedView_Previews: PreviewProvider {
     static var previews: some View {
-        PlantDetailedView(plant: Plant(id: 1, familiarName: "kwiat", location: "kuchnia", maxHumidity: 0.7, minHumidity: 0.2, maxTemperature: 22, minTemperature: 18, sensorId: 1))
+        PlantDetailedView(mqttManager: MQTTManager(), plant: Plant(id: 1, familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22.1, minTemperature: 18.3, sensorName: "test"))
     }
 }
