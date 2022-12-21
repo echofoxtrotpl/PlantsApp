@@ -438,3 +438,6 @@ void app_main(void)
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
+
+// mosquitto_sub -h mqtt.eclipseprojects.io -t seba123/humidity
+// mosquitto_pub -h mqtt.eclipseprojects.io -t seba123/custom -m "test"

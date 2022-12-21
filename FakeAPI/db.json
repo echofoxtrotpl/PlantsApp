@@ -1,24 +1,14 @@
 {
   "plants": [
     {
-      "id": 1,
-      "familiarName": "skrzydlokwiat",
-      "location": "kuchnia",
-      "minTemperature": 15.5,
-      "maxTemperature": 22.2,
-      "minHumidity": 40,
-      "maxHumidity": 50,
-      "sensorName": "test"
-    },
-    {
-      "location": "test",
+      "location": "Kuchnia",
       "familiarName": "Kaktus",
-      "maxTemperature": 7,
-      "minHumidity": 40,
+      "maxTemperature": 10.000000000000002,
+      "minHumidity": 5,
       "sensorName": "PROV_05875C",
-      "minTemperature": 0,
-      "maxHumidity": 100,
-      "id": 2
+      "minTemperature": 2.0000000000000013,
+      "maxHumidity": 75,
+      "id": 1
     }
   ]
 }
