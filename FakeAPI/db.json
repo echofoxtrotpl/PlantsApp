@@ -2,12 +2,12 @@
   "plants": [
     {
       "location": "Kuchnia",
-      "familiarName": "Kaktus",
-      "maxTemperature": 10.000000000000002,
-      "minHumidity": 5,
+      "familiarName": "Test",
+      "maxTemperature": 0,
+      "minHumidity": 0,
       "sensorName": "PROV_05875C",
-      "minTemperature": 2.0000000000000013,
-      "maxHumidity": 75,
+      "minTemperature": 0,
+      "maxHumidity": 100,
       "id": 1
     }
   ]

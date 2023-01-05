@@ -21,7 +21,7 @@ struct Plant: Codable {
 struct RecordStruct: Codable {
     var temperature: Double 
     var humidity: Int
-    var updatedAt: Date
+    var updatedAt: Date?
     var sensorName: String
 }
 
@@ -34,7 +34,6 @@ class Record: ObservableObject {
 }
 
 struct MqttMessage: Codable {
-    var sensorName: String
-    var humidity: Int?
-    var temperature: Double?
+    var humidity: Double
+    var temperature: Double
 }

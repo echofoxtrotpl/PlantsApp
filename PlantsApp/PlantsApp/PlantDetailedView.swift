@@ -10,7 +10,7 @@ import SwiftUI
 struct PlantDetailedView: View {
     private var record: RecordStruct {
         get {
-            mqttManager.records[plant.sensorName] ?? RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date.now, sensorName: plant.sensorName)
+            mqttManager.records[plant.sensorName] ?? RecordStruct(temperature: 0.0, humidity: 0, sensorName: plant.sensorName)
         }
     }
     private var isTempExceeded: Bool {
@@ -39,10 +39,13 @@ struct PlantDetailedView: View {
                             VStack (alignment: .leading){
                                 HStack{
                                     Text("Data ostatniej aktualizacji: ")
-                                        .font(.caption)
-                                    Text(record.updatedAt, format: .dateTime)
-                                        .font(.caption)
+                                    if record.updatedAt != nil {
+                                        Text(record.updatedAt!, format: .dateTime)
+                                    } else {
+                                        Text("brak danych")
+                                    }
                                 }
+                                .font(.caption)
                                 Text(plant.familiarName)
                                     .font(.largeTitle)
                                     .bold()

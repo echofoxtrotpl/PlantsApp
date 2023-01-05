@@ -31,7 +31,6 @@ struct PlantDemoCard: View {
                                 Text(plant.location)
                                     .font(.caption)
                                 Spacer()
-                                TagPill(tagContent: "trza podlać")
                                 TagPill(tagContent: "za gorąco")
                             }
                             .foregroundColor(.white)

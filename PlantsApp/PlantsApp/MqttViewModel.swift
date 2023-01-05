@@ -12,12 +12,9 @@ final class MQTTManager: ObservableObject {
     private var mqttClient: CocoaMQTT?
     private var identifier: String!
     private var host: String!
-    private var topic: String!
     private var username: String!
     private var password: String!
-    
-    private var temperatureTopic = "seba123/temperature"
-    private var humidityTopic = "seba123/humidity"
+    private var topics: [String]!
     
     @Published var receivedMessage: String = ""
     @Published var records: [String: RecordStruct] = [:]
@@ -30,7 +27,7 @@ final class MQTTManager: ObservableObject {
         return _shared
     }
 
-    func initializeMQTT(host: String, identifier: String, username: String? = nil, password: String? = nil) {
+    func initializeMQTT(host: String, identifier: String, topics: [String] = [], username: String? = nil, password: String? = nil) {
         // If any previous instance exists then clean it
         if mqttClient != nil {
             mqttClient = nil
@@ -39,6 +36,7 @@ final class MQTTManager: ObservableObject {
         self.host = host
         self.username = username
         self.password = password
+        self.topics = topics
         let clientID = "CocoaMQTT-\(identifier)-" + String(ProcessInfo().processIdentifier)
 
         // TODO: Guard
@@ -64,7 +62,6 @@ final class MQTTManager: ObservableObject {
     }
 
     func subscribe(topic: String) {
-        self.topic = topic
         mqttClient?.subscribe(topic, qos: .qos1)
     }
 
@@ -78,11 +75,6 @@ final class MQTTManager: ObservableObject {
 
     /// Unsubscribe from a topic
     func unSubscribe(topic: String) {
-        mqttClient?.unsubscribe(topic)
-    }
-
-    /// Unsubscribe from a topic
-    func unSubscribeFromCurrentTopic() {
         mqttClient?.unsubscribe(topic)
     }
     
@@ -102,8 +94,9 @@ extension MQTTManager: CocoaMQTTDelegate {
 
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         TRACE("ack: \(ack)")
-        subscribe(topic: humidityTopic)
-        subscribe(topic: temperatureTopic)
+        for topic in topics{
+            subscribe(topic: "\(topic)/records")
+        }
     }
 
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
@@ -118,18 +111,15 @@ extension MQTTManager: CocoaMQTTDelegate {
         TRACE("message: \(message.string!.description), id: \(id)")
         
         let decodedMessage = try! JSONDecoder().decode(MqttMessage.self, from: Data(message.string!.description.utf8))
-        
+        let sensorName = message.topic.components(separatedBy: "/")[0]
         DispatchQueue.main.async {
-            if self.records[decodedMessage.sensorName] == nil {
-                self.records[decodedMessage.sensorName] = RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date.now, sensorName: decodedMessage.sensorName)
+            if self.records[sensorName] == nil {
+                self.records[sensorName] = RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date.now, sensorName: sensorName)
             }
         
-            if message.topic == self.humidityTopic {
-                self.records[decodedMessage.sensorName]?.humidity = decodedMessage.humidity!
-            } else if message.topic == self.temperatureTopic {
-                self.records[decodedMessage.sensorName]?.temperature = decodedMessage.temperature!
-            }
-            self.records[decodedMessage.sensorName]?.updatedAt = Date.now
+            self.records[sensorName]!.humidity = Int(decodedMessage.humidity)
+            self.records[sensorName]!.temperature = decodedMessage.temperature
+            self.records[sensorName]!.updatedAt = Date.now
         }
     }
 

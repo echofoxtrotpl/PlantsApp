@@ -35,7 +35,7 @@ struct ContentView: View {
                         }
                     }
                     .task{
-                        plants = await getPlants()
+                        await loadPlants();
                     }
                 }
                 .refreshable {
@@ -56,15 +56,21 @@ struct ContentView: View {
                 }
                 .padding(.top, 10)
                 .sheet(isPresented: $showingAddPlantSheet) {
-                    AddPlantView()
+                    AddPlantView(mqttManager: mqttManager)
                 }
             
         }
         .accentColor(.white)
-        .onAppear{
-            mqttManager.initializeMQTT(host: "mqtt.eclipseprojects.io", identifier: UUID().uuidString)
-            mqttManager.connect()
-        }
+    }
+    
+    func loadPlants() async {
+        plants = await getPlants();
+        mqttManager.initializeMQTT(
+            host: "mqtt.eclipseprojects.io",
+            identifier: UUID().uuidString,
+            topics: plants.map{$0.sensorName}
+        )
+        mqttManager.connect()
     }
 }
 

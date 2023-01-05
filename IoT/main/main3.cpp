@@ -19,12 +19,15 @@
 
 #include "driver/gpio.h"
 
+#include <WiFiUdp.h>
 #include "mqtt_client.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 
-#define BLINK_GPIO 2
+#include "AM2320.h"
+
+#define BLINK_GPIO GPIO_NUM_2
 
 static const char *TAG = "app";
 static const char *CONFIG_BROKER_URL = "mqtt://mqtt.eclipseprojects.io";
@@ -37,6 +40,8 @@ esp_mqtt_client_handle_t client;
 
 int counter = 0;
 char service_name[12];
+
+AM2320 sensor;
 
 static void blink_led(void)
 {
@@ -151,7 +156,7 @@ static void log_error_if_nonzero(const char *message, int error_code)
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
-    esp_mqtt_event_handle_t event = event_data;
+    esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
     client = event->client;
     int msg_id;
     switch ((esp_mqtt_event_id_t)event_id)
@@ -198,28 +203,15 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-static char* parseTempRecord(double temp)
-{
-    cJSON *json = cJSON_CreateObject();
-
-    cJSON *temperature = cJSON_CreateNumber(temp);
-    cJSON_AddItemToObject(json, "temperature", temperature);
-
-    cJSON *sensorName = cJSON_CreateString(service_name);    
-    cJSON_AddItemToObject(json, "sensorName", sensorName);
-
-    return cJSON_Print(json);
-}
-
-static char *parseHumidityRecord(int hum)
+static char *parseRecord(float hum, float temp)
 {
     cJSON *json = cJSON_CreateObject();
 
     cJSON *humidity = cJSON_CreateNumber(hum);
     cJSON_AddItemToObject(json, "humidity", humidity);
-    
-    cJSON *sensorName = cJSON_CreateString(service_name);
-    cJSON_AddItemToObject(json, "sensorName", sensorName);
+
+    cJSON *temperature = cJSON_CreateNumber(temp);
+    cJSON_AddItemToObject(json, "temperature", temperature);
 
     return cJSON_Print(json);
 }
@@ -232,11 +224,11 @@ static void mqtt_app_start(void)
 
     client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+    esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
 }
 
-void app_main(void)
+extern "C" void app_main(void)
 {
     /* Initialize NVS partition */
     esp_err_t ret = nvs_flash_init();
@@ -404,6 +396,7 @@ void app_main(void)
     if (bits & WIFI_CONNECTED_BIT)
     {
         mqtt_app_start();
+        sensor.begin();
     }
 
     while (1)
@@ -416,19 +409,31 @@ void app_main(void)
 
         if ((bits & (MQTT_CONNECTED_BIT | WIFI_CONNECTED_BIT)) == (MQTT_CONNECTED_BIT | WIFI_CONNECTED_BIT))
         {
-            int msg_id = esp_mqtt_client_publish(client, "seba123/humidity", parseHumidityRecord(40), 0, 1, 0);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-
-            msg_id = esp_mqtt_client_publish(client, "seba123/temperature", parseTempRecord(11.2), 0, 1, 0);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+            if (sensor.measure())
+            {
+                std::string topic = service_name;
+                topic = topic + "/records";
+                float temperature = sensor.getTemperature();
+                float humidity = sensor.getHumidity();
+                ESP_LOGI(TAG, "Temperature: %.2f", temperature);
+                ESP_LOGI(TAG, "Humidity: %.2f", humidity);
+                esp_mqtt_client_publish(client, topic.c_str(), parseRecord(humidity, temperature), 0, 1, 0);
+            }
+            else
+            { // error has occured
+                int errorCode = sensor.getErrorCode();
+                switch (errorCode)
+                {
+                case 1:
+                    ESP_LOGI(TAG, "ERR: Sensor is offline.");
+                    break;
+                case 2:
+                    ESP_LOGI(TAG, "ERR: CRC validation failed.");
+                    break;
+                }
+            }
 
             vTaskDelay(5000 / portTICK_PERIOD_MS);
-
-            msg_id = esp_mqtt_client_publish(client, "seba123/humidity", parseHumidityRecord(15), 0, 1, 0);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-
-            msg_id = esp_mqtt_client_publish(client, "seba123/temperature", parseTempRecord(0.5), 0, 1, 0);
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         } else if (bits & WIFI_CONNECTED_BIT)
         {
             ESP_LOGI(TAG, "Reconnecting MQTT");

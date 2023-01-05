@@ -20,6 +20,7 @@ struct AddPlantView: View {
     // Sensor
     @State private var selectedSensorName = ""
     @StateObject private var bleProvisioningViewModel = BleProvisioningViewModel()
+    @ObservedObject var mqttManager: MQTTManager
     
     var body: some View {
         NavigationView{
@@ -102,8 +103,10 @@ struct AddPlantView: View {
             .toolbar {
                 Button("Zapisz"){
                     Task {
-                        let success = await addPlant(createPlant())
+                        let newPlant = createPlant()
+                        let success = await addPlant(newPlant)
                         if (success) {
+                            mqttManager.subscribe(topic: "\(newPlant.sensorName)/records")
                             dismiss()
                         }
                     }
@@ -122,6 +125,6 @@ struct AddPlantView: View {
 
 struct AddPlantView_Previews: PreviewProvider {
     static var previews: some View {
-        AddPlantView()
+        AddPlantView(mqttManager: MQTTManager())
     }
 }
