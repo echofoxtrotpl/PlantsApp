@@ -15,50 +15,41 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-                VStack{
-                    ZStack{
-                        Rectangle()
-                            .foregroundColor(Color(.systemGray6))
-                        HStack{
-                            Image(systemName: "magnifyingglass")
-                            TextField("Wyszukaj...", text: $searchText)
-                        }
-                        .foregroundColor(.gray)
-                        .padding(.leading, 13)
+            ScrollView {
+                if plants.count > 0 {
+                    ForEach(plants, id: \.id) { plant in
+                        PlantDemoCard(plant: plant, mqttManager: mqttManager)
                     }
-                    .frame(height: 40)
-                    .cornerRadius(13)
-                    .padding()
-                    ScrollView {
-                        ForEach(plants, id: \.id) { plant in
-                            PlantDemoCard(plant: plant, mqttManager: mqttManager)
-                        }
+                } else {
+                    Text("Pociągnij w dół aby odświeżyć")
+                        .font(.footnote)
+                }
+            }
+            .onAppear {
+                Task{
+                    await loadPlants();
+                }
+            }
+            .refreshable {
+                plants = await getPlants()
+            }
+            .navigationTitle("Twoje rośliny")
+            .toolbar {
+                Button {
+                    showingAddPlantSheet = true
+                } label: {
+                    HStack{
+                        Image(systemName: "plus")
+                        Text("Dodaj")
                     }
-                    .task{
-                        await loadPlants();
-                    }
+                    .foregroundColor(.black)
+                    
                 }
-                .refreshable {
-                    plants = await getPlants()
-                }
-                .navigationTitle("Twoje rośliny")
-                .toolbar {
-                    Button {
-                        showingAddPlantSheet = true
-                    } label: {
-                        HStack{
-                            Image(systemName: "plus")
-                            Text("Dodaj")
-                        }
-                        .foregroundColor(.black)
-                        
-                    }
-                }
-                .padding(.top, 10)
-                .sheet(isPresented: $showingAddPlantSheet) {
-                    AddPlantView(mqttManager: mqttManager)
-                }
-            
+            }
+            .padding(.top, 10)
+            .sheet(isPresented: $showingAddPlantSheet) {
+                AddPlantView(mqttManager: mqttManager)
+            }
         }
         .accentColor(.white)
     }

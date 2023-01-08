@@ -8,20 +8,30 @@
 import SwiftUI
 
 struct PlantDetailedView: View {
+    var plant: Plant
+    @AppStorage private var lastRecord: CodableWrapper<RecordStruct>
+    @ObservedObject var mqttManager: MQTTManager
+    
+    let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    
+    init(mqttManager: MQTTManager, plant: Plant) {
+        self.plant = plant
+        self._lastRecord = AppStorage(wrappedValue: .init(value: RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date(), sensorName: plant.sensorName)), plant.sensorName)
+        self.mqttManager = mqttManager;
+    }
+    
     private var record: RecordStruct {
         get {
-            mqttManager.records[plant.sensorName] ?? RecordStruct(temperature: 0.0, humidity: 0, sensorName: plant.sensorName)
+            mqttManager.records[plant.sensorName] ?? lastRecord.value
         }
     }
+    
     private var isTempExceeded: Bool {
         get {
             record.temperature > plant.maxTemperature ||
             record.temperature < plant.minTemperature
         }
     }
-    @ObservedObject var mqttManager: MQTTManager
-    
-    var plant: Plant
     
     var body: some View {
         ZStack{
@@ -39,11 +49,7 @@ struct PlantDetailedView: View {
                             VStack (alignment: .leading){
                                 HStack{
                                     Text("Data ostatniej aktualizacji: ")
-                                    if record.updatedAt != nil {
-                                        Text(record.updatedAt!, format: .dateTime)
-                                    } else {
-                                        Text("brak danych")
-                                    }
+                                    Text(record.updatedAt, format: .dateTime)
                                 }
                                 .font(.caption)
                                 Text(plant.familiarName)
@@ -114,6 +120,9 @@ struct PlantDetailedView: View {
                         .ignoresSafeArea()
                 )
             }
+        }
+        .onReceive(timer) { _ in
+            lastRecord.value = record
         }
     }
 }

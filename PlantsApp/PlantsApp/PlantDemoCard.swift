@@ -10,6 +10,23 @@ import SwiftUI
 struct PlantDemoCard: View {
     var plant: Plant
     @ObservedObject var mqttManager: MQTTManager
+    private var record: RecordStruct {
+        get {
+            mqttManager.records[plant.sensorName] ?? RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date(), sensorName: "")
+        }
+    }
+    private var isTempExceeded: Bool {
+        get {
+            record.temperature > plant.maxTemperature ||
+            record.temperature < plant.minTemperature
+        }
+    }
+    private var isHumidityExceeded: Bool {
+        get {
+            record.humidity > plant.maxHumidity ||
+            record.humidity < plant.minHumidity
+        }
+    }
 
     var body: some View {
         HStack{
@@ -31,7 +48,12 @@ struct PlantDemoCard: View {
                                 Text(plant.location)
                                     .font(.caption)
                                 Spacer()
-                                TagPill(tagContent: "za gorąco")
+                                if isTempExceeded && record.temperature != .infinity {
+                                    TagPill(tagContent: "temperatura")
+                                }
+                                if isHumidityExceeded && record.humidity != -1 {
+                                    TagPill(tagContent: "wilgotność")
+                                }
                             }
                             .foregroundColor(.white)
                             .padding()

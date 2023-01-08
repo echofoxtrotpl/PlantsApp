@@ -38,8 +38,10 @@ const int MQTT_CONNECTED_BIT = BIT1;
 static EventGroupHandle_t wifi_event_group;
 esp_mqtt_client_handle_t client;
 
-int counter = 0;
 char service_name[12];
+float temperature = 0.0;
+float humidity = 0.0;
+std::string topic;
 
 AM2320 sensor;
 
@@ -132,6 +134,8 @@ static void get_device_service_name(char *service_name, size_t max)
     esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
     snprintf(service_name, max, "%s%02X%02X%02X",
              ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
+    topic = service_name;
+    topic = topic + "/records";
 }
 
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -411,13 +415,15 @@ extern "C" void app_main(void)
         {
             if (sensor.measure())
             {
-                std::string topic = service_name;
-                topic = topic + "/records";
-                float temperature = sensor.getTemperature();
-                float humidity = sensor.getHumidity();
-                ESP_LOGI(TAG, "Temperature: %.2f", temperature);
-                ESP_LOGI(TAG, "Humidity: %.2f", humidity);
-                esp_mqtt_client_publish(client, topic.c_str(), parseRecord(humidity, temperature), 0, 1, 0);
+                float currTemperature = sensor.getTemperature();
+                float currHumidity = sensor.getHumidity();
+                if((int)currHumidity != (int)humidity || currTemperature != temperature){
+                    humidity = currHumidity;
+                    temperature = currTemperature;
+                    ESP_LOGI(TAG, "Temperature: %.2f", temperature);
+                    ESP_LOGI(TAG, "Humidity: %.2f", humidity);
+                    esp_mqtt_client_publish(client, topic.c_str(), parseRecord(humidity, temperature), 0, 1, 0);
+                }
             }
             else
             { // error has occured
@@ -437,7 +443,7 @@ extern "C" void app_main(void)
         } else if (bits & WIFI_CONNECTED_BIT)
         {
             ESP_LOGI(TAG, "Reconnecting MQTT");
-            esp_mqtt_client_reconnect(client);
+            //esp_mqtt_client_reconnect(client);
         }
 
         vTaskDelay(5000 / portTICK_PERIOD_MS);

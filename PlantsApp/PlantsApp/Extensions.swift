@@ -15,3 +15,32 @@ extension Color {
                      blue: Double(blue)/255.0)
     }
 }
+
+extension CodableWrapper: RawRepresentable {
+    
+    typealias RawValue = String
+    
+    var rawValue: RawValue {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        guard
+            let data = try? encoder.encode(value),
+            let string = String(data: data, encoding: .utf8)
+        else {
+            return ""
+        }
+        return string
+    }
+    
+    init?(rawValue: RawValue) {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard
+            let data = rawValue.data(using: .utf8),
+            let decoded = try? decoder.decode(Value.self, from: data)
+        else {
+            return nil
+        }
+        value = decoded
+    }
+}

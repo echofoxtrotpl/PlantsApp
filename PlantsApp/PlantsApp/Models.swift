@@ -19,10 +19,14 @@ struct Plant: Codable {
 }
 
 struct RecordStruct: Codable {
-    var temperature: Double 
+    var temperature: Double
     var humidity: Int
-    var updatedAt: Date?
+    var updatedAt: Date
     var sensorName: String
+}
+
+struct CodableWrapper<Value: Codable> {
+    var value: Value
 }
 
 class Record: ObservableObject {
