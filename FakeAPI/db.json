@@ -2,23 +2,13 @@
   "plants": [
     {
       "location": "Kuchnia",
-      "familiarName": "Test",
-      "maxTemperature": 0,
-      "minHumidity": 0,
-      "sensorName": "PROV_05875C",
-      "minTemperature": 0,
-      "maxHumidity": 100,
-      "id": 1
-    },
-    {
-      "location": "Pokój gościnny",
       "familiarName": "Kaktus",
-      "maxTemperature": 24.000000000000004,
-      "minHumidity": 10,
+      "maxTemperature": 22.500000000000004,
+      "minHumidity": 25,
       "sensorName": "PROV_0589F4",
-      "minTemperature": 17.000000000000004,
-      "maxHumidity": 60,
-      "id": 2
+      "minTemperature": 4.000000000000002,
+      "maxHumidity": 70,
+      "id": 1
     }
   ]
 }
