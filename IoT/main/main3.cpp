@@ -25,7 +25,7 @@
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 
-#include "AM2320.h"
+#include "am2320.h"
 
 #define BLINK_GPIO GPIO_NUM_2
 
@@ -42,8 +42,6 @@ char service_name[12];
 float temperature = 0.0;
 float humidity = 0.0;
 std::string topic;
-
-AM2320 sensor;
 
 static void blink_led(void)
 {
@@ -400,7 +398,7 @@ extern "C" void app_main(void)
     if (bits & WIFI_CONNECTED_BIT)
     {
         mqtt_app_start();
-        sensor.begin();
+        initSensor();
     }
 
     while (1)
@@ -413,10 +411,10 @@ extern "C" void app_main(void)
 
         if ((bits & (MQTT_CONNECTED_BIT | WIFI_CONNECTED_BIT)) == (MQTT_CONNECTED_BIT | WIFI_CONNECTED_BIT))
         {
-            if (sensor.measure())
+            if (measure())
             {
-                float currTemperature = sensor.getTemperature();
-                float currHumidity = sensor.getHumidity();
+                float currTemperature = getTemperature();
+                float currHumidity = getHumidity();
                 if((int)currHumidity != (int)humidity || currTemperature != temperature){
                     humidity = currHumidity;
                     temperature = currTemperature;
@@ -426,24 +424,14 @@ extern "C" void app_main(void)
                 }
             }
             else
-            { // error has occured
-                int errorCode = sensor.getErrorCode();
-                switch (errorCode)
-                {
-                case 1:
-                    ESP_LOGI(TAG, "ERR: Sensor is offline.");
-                    break;
-                case 2:
-                    ESP_LOGI(TAG, "ERR: CRC validation failed.");
-                    break;
-                }
+            {
+                ESP_LOGE(TAG, "Sensor is offline.");
             }
 
             vTaskDelay(5000 / portTICK_PERIOD_MS);
         } else if (bits & WIFI_CONNECTED_BIT)
         {
             ESP_LOGI(TAG, "Reconnecting MQTT");
-            //esp_mqtt_client_reconnect(client);
         }
 
         vTaskDelay(5000 / portTICK_PERIOD_MS);

@@ -41,10 +41,10 @@ struct PlantDetailedView: View {
             VStack{
                 HStack{
                     ZStack{
-                        Image("plant")
+                        Image("plants")
                             .resizable()
-                            .blur(radius: 3)
-                            .scaledToFill()
+                            .blur(radius: 2)
+                            .scaledToFit()
                         HStack{
                             VStack (alignment: .leading){
                                 HStack{
@@ -64,7 +64,7 @@ struct PlantDetailedView: View {
                         .foregroundColor(.white)
                     }
                 }
-                .frame(height: 270)
+                .frame(height: 230)
                 HStack{
                     ScrollView{
                         VStack(alignment: .leading, spacing: 30){

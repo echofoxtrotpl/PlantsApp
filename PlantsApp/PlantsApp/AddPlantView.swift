@@ -23,7 +23,7 @@ struct AddPlantView: View {
     @ObservedObject var mqttManager: MQTTManager
     
     var body: some View {
-        NavigationView{
+
             Form {
                 Section(header: Text("O roślinie")){
                     TextField("Przyjazna nazwa", text: $plantName)
@@ -115,7 +115,7 @@ struct AddPlantView: View {
                 .disabled(selectedSensorName.isEmpty || plantName.isEmpty || !bleProvisioningViewModel.wifiSettingsApplied
                           || location.isEmpty)
             }
-        }
+        
     }
     
     func createPlant() -> Plant {

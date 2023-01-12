@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var searchText = ""
-    @State private var showingAddPlantSheet = false
     @State private var plants: [Plant] = []
     @StateObject var mqttManager: MQTTManager = MQTTManager()
     
@@ -35,23 +34,19 @@ struct ContentView: View {
             }
             .navigationTitle("Twoje rośliny")
             .toolbar {
-                Button {
-                    showingAddPlantSheet = true
+                NavigationLink {
+                    AddPlantView(mqttManager: mqttManager)
                 } label: {
                     HStack{
                         Image(systemName: "plus")
                         Text("Dodaj")
                     }
                     .foregroundColor(.black)
-                    
                 }
             }
             .padding(.top, 10)
-            .sheet(isPresented: $showingAddPlantSheet) {
-                AddPlantView(mqttManager: mqttManager)
-            }
         }
-        .accentColor(.white)
+        .accentColor(.black)
     }
     
     func loadPlants() async {

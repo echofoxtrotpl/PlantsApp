@@ -48,10 +48,10 @@ struct PlantDemoCard: View {
                                 Text(plant.location)
                                     .font(.caption)
                                 Spacer()
-                                if isTempExceeded && record.temperature != .infinity {
+                                if isTempExceeded {
                                     TagPill(tagContent: "temperatura")
                                 }
-                                if isHumidityExceeded && record.humidity != -1 {
+                                if isHumidityExceeded {
                                     TagPill(tagContent: "wilgotność")
                                 }
                             }
