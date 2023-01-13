@@ -21,6 +21,7 @@ struct AddPlantView: View {
     @State private var selectedSensorName = ""
     @StateObject private var bleProvisioningViewModel = BleProvisioningViewModel()
     @ObservedObject var mqttManager: MQTTManager
+    @ObservedObject var httpClient: HttpClient
     
     var body: some View {
 
@@ -104,7 +105,7 @@ struct AddPlantView: View {
                 Button("Zapisz"){
                     Task {
                         let newPlant = createPlant()
-                        let success = await addPlant(newPlant)
+                        let success = await httpClient.addPlant(newPlant)
                         if (success) {
                             mqttManager.subscribe(topic: "\(newPlant.sensorName)/records")
                             dismiss()
@@ -125,6 +126,6 @@ struct AddPlantView: View {
 
 struct AddPlantView_Previews: PreviewProvider {
     static var previews: some View {
-        AddPlantView(mqttManager: MQTTManager())
+        AddPlantView(mqttManager: MQTTManager(), httpClient: HttpClient())
     }
 }

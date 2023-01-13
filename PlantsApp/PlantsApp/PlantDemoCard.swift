@@ -10,6 +10,7 @@ import SwiftUI
 struct PlantDemoCard: View {
     var plant: Plant
     @ObservedObject var mqttManager: MQTTManager
+    @ObservedObject var httpClient: HttpClient
     private var record: RecordStruct {
         get {
             mqttManager.records[plant.sensorName] ?? RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date(), sensorName: "")
@@ -66,7 +67,7 @@ struct PlantDemoCard: View {
                                 Spacer()
                                 Button{
                                     Task {
-                                        await removePlant(_: plant.id!)
+                                        await httpClient.removePlant(_: plant.id!)
                                     }
                                 } label: {
                                     Image(systemName: "trash")
@@ -87,6 +88,6 @@ struct PlantDemoCard: View {
 
 struct PlantDemoCard_Previews: PreviewProvider {
     static var previews: some View {
-        PlantDemoCard(plant: Plant(familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22, minTemperature: 18, sensorName: ""), mqttManager: MQTTManager())
+        PlantDemoCard(plant: Plant(familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22, minTemperature: 18, sensorName: ""), mqttManager: MQTTManager(), httpClient: HttpClient())
     }
 }
