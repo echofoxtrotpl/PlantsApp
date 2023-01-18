@@ -14,6 +14,10 @@
 #include <esp_event.h>
 #include <nvs_flash.h>
 
+#include "nvs.h"
+#include "esp_ota_ops.h"
+#include "esp_http_client.h"
+#include "esp_https_ota.h"
 #include <wifi_provisioning/manager.h>
 #include <wifi_provisioning/scheme_ble.h>
 
@@ -24,19 +28,133 @@
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
+#include "esp_sleep.h"
 
 #include "am2320.h"
 
+#define FIRMWARE_VERSION 0.0
+#define UPDATE_JSON_URL "http://192.168.20.102:3000/iot"
 #define BLINK_GPIO GPIO_NUM_2
+
+extern const uint8_t server_cert_pem_start[] asm("_binary_certificate_pem_start");
+extern const uint8_t server_cert_pem_end[] asm("_binary_certificate_pem_end");
 
 static const char *TAG = "app";
 static const char *CONFIG_BROKER_URL = "mqtt://mqtt.eclipseprojects.io";
+
+// receive buffer
+char rcv_buffer[100];
+
+// esp_http_client event handler
+esp_err_t _http_event_handler(esp_http_client_event_t *evt)
+{
+
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ERROR:
+        ESP_LOGI(TAG, "error in connection");
+        break;
+    case HTTP_EVENT_ON_CONNECTED:
+        ESP_LOGI(TAG, "Connected");
+        break;
+    case HTTP_EVENT_HEADER_SENT:
+        break;
+    case HTTP_EVENT_ON_HEADER:
+        break;
+    case HTTP_EVENT_ON_DATA:
+        ESP_LOGI(TAG, "Got data");
+        if (!esp_http_client_is_chunked_response(evt->client))
+        {
+            strncpy(rcv_buffer, (char *)evt->data, evt->data_len);
+        }
+        break;
+    case HTTP_EVENT_ON_FINISH:
+        break;
+    case HTTP_EVENT_DISCONNECTED:
+        break;
+    }
+    return ESP_OK;
+}
+
+// Check update task
+void check_update()
+{
+    printf("Looking for a new firmware...\n");
+
+    // configure the esp_http_client
+    esp_http_client_config_t config = {
+        .url = UPDATE_JSON_URL,
+        //.cert_pem = (char *)server_cert_pem_start,
+        .timeout_ms = 10000,
+        .event_handler = _http_event_handler,
+
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    // downloading the json file
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK)
+    {
+
+        // parse the json file
+        cJSON *json = cJSON_Parse(rcv_buffer);
+        if (json == NULL)
+            printf("downloaded file is not a valid json, aborting...\n");
+        else
+        {
+            cJSON *version = cJSON_GetObjectItemCaseSensitive(json, "version");
+            cJSON *file = cJSON_GetObjectItemCaseSensitive(json, "file");
+
+            // check the version
+            if (!cJSON_IsNumber(version))
+                printf("unable to read new version, aborting...\n");
+            else
+            {
+
+                double new_version = version->valuedouble;
+                if (new_version > FIRMWARE_VERSION)
+                {
+
+                    printf("current firmware version (%.1f) is lower than the available one (%.1f), upgrading...\n", FIRMWARE_VERSION, new_version);
+                    if (cJSON_IsString(file) && (file->valuestring != NULL))
+                    {
+                        printf("downloading and installing new firmware (%s)...\n", file->valuestring);
+
+                        esp_http_client_config_t ota_client_config = {
+                            .url = file->valuestring,
+                            .cert_pem = (char *)server_cert_pem_start,
+                        };
+                        esp_err_t ret = esp_https_ota(&ota_client_config);
+                        if (ret == ESP_OK)
+                        {
+                            printf("OTA OK, restarting...\n");
+                            esp_restart();
+                        }
+                        else
+                        {
+                            printf("OTA failed...\n");
+                        }
+                    }
+                    else
+                        printf("unable to read the new file name, aborting...\n");
+                }
+                else
+                    printf("current firmware version (%.1f) is greater or equal to the available one (%.1f), nothing to do...\n", FIRMWARE_VERSION, new_version);
+            }
+        }
+    }
+    else
+        printf("unable to download the json file, aborting...\n");
+
+    // cleanup
+    esp_http_client_cleanup(client);
+}
 
 /* Signal Wi-Fi events on this event-group */
 const int WIFI_CONNECTED_BIT = BIT0;
 const int MQTT_CONNECTED_BIT = BIT1;
 static EventGroupHandle_t wifi_event_group;
-esp_mqtt_client_handle_t client;
+esp_mqtt_client_handle_t mqtt_client;
 
 char service_name[12];
 float temperature = 0.0;
@@ -54,6 +172,16 @@ static void configure_led(void)
 {
     gpio_reset_pin(BLINK_GPIO);
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+}
+
+void setup_sleep()
+{
+    // konfiguracja pinu wakeup
+    // esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0); // 0 - stan niski, 1 - stan wysoki
+    // ustawienie czasu snu
+    uint64_t time_in_us = 20e6; // 20 sekund
+    printf("time in use: %lld", time_in_us);
+    esp_sleep_enable_timer_wakeup(time_in_us);
 }
 
 /* Event handler for catching system events */
@@ -159,15 +287,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
-    client = event->client;
+    mqtt_client = event->client;
     int msg_id;
     switch ((esp_mqtt_event_id_t)event_id)
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-
-        msg_id = esp_mqtt_client_subscribe(client, "seba123/custom", 1);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         xEventGroupSetBits(wifi_event_group, MQTT_CONNECTED_BIT);
         break;
@@ -220,14 +345,79 @@ static char *parseRecord(float hum, float temp)
 
 static void mqtt_app_start(void)
 {
-    esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = CONFIG_BROKER_URL,
-    };
-
-    client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_config_t mqtt_cfg;
+    mqtt_cfg.uri = CONFIG_BROKER_URL;
+    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-    esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
-    esp_mqtt_client_start(client);
+    esp_mqtt_client_register_event(mqtt_client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
+    esp_mqtt_client_start(mqtt_client);
+}
+
+void saveRecordInNVS(float humidity, float temperature)
+{
+    nvs_handle_t my_handle;
+    esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
+    if (err != ESP_OK)
+    {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+    }
+    else
+    {
+        printf("Opened NVS\n");
+
+        err = nvs_set_str(my_handle, "temperature", std::to_string(temperature).c_str());
+        printf((err != ESP_OK) ? "Temperature nvs save failed!\n" : "Temperature nvs save done\n");
+
+        err = nvs_set_str(my_handle, "humidity", std::to_string(humidity).c_str());
+        printf((err != ESP_OK) ? "Humidity nvs save failed!\n" : "Humidity nvs save done\n");
+
+        err = nvs_commit(my_handle);
+        printf((err != ESP_OK) ? "Failed to save!\n" : "Save done\n");
+
+        // Close
+        nvs_close(my_handle);
+    }
+}
+
+void getRecordFromNVS(float &humidity, float &temperature)
+{
+    nvs_handle_t my_handle;
+    esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
+
+    if (err != ESP_OK)
+    {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        return;
+    }
+
+    printf("Opened NVS\n");
+    size_t required_size;
+
+    err = nvs_get_str(my_handle, "temperature", NULL, &required_size);
+    char *temperatureFromNVS = (char *)malloc(required_size);
+    err = nvs_get_str(my_handle, "temperature", temperatureFromNVS, &required_size);
+
+    err = nvs_get_str(my_handle, "humidity", NULL, &required_size);
+    char *humidityFromNVS = (char *)malloc(required_size);
+    err = nvs_get_str(my_handle, "humidity", humidityFromNVS, &required_size);
+
+    switch (err)
+    {
+    case ESP_OK:
+        humidity = std::stof(humidityFromNVS);
+        temperature = std::stof(temperatureFromNVS);
+        break;
+    case ESP_ERR_NVS_NOT_FOUND:
+        nvs_close(my_handle);
+        humidity = 0.0f;
+        temperature = 0.0f;
+        saveRecordInNVS(humidity, temperature);
+        break;
+    default:
+        printf("Error (%s) reading!\n", esp_err_to_name(err));
+    }
+    free(temperatureFromNVS);
+    free(humidityFromNVS);
 }
 
 extern "C" void app_main(void)
@@ -252,6 +442,7 @@ extern "C" void app_main(void)
 
     /* conf led */
     configure_led();
+    setup_sleep();
 
     wifi_event_group = xEventGroupCreate();
 
@@ -299,7 +490,6 @@ extern "C" void app_main(void)
     if (!provisioned)
     {
         ESP_LOGI(TAG, "Starting provisioning");
-
 
         /* What is the security level that we want (0 or 1):
          *      - WIFI_PROV_SECURITY_0 is simply plain text communication.
@@ -383,60 +573,57 @@ extern "C" void app_main(void)
          * so let's release it's resources */
         ESP_LOGI(TAG, "Already provisioned");
         wifi_prov_mgr_deinit();
-
-        /* Start Wi-Fi station */
-        wifi_init_sta();
     }
 
-    /* Start main application now */
-    EventBits_t bits = xEventGroupWaitBits(wifi_event_group,
-                                           WIFI_CONNECTED_BIT,
-                                           false,
-                                           false,
-                                           portMAX_DELAY);
-
-    if (bits & WIFI_CONNECTED_BIT)
-    {
-        mqtt_app_start();
-        initSensor();
-    }
+    initSensor();
 
     while (1)
     {
-        bits = xEventGroupWaitBits(wifi_event_group,
-                                    MQTT_CONNECTED_BIT | WIFI_CONNECTED_BIT,
+        if (measure())
+        {
+            float currTemperature = getTemperature();
+            float currHumidity = getHumidity();
+            // getRecordFromNVS(humidity, temperature);
+
+            ESP_LOGI(TAG, "HUM from nvs: %f", humidity);
+            ESP_LOGI(TAG, "TEMP from nvs: %f", temperature);
+
+            if (abs(currHumidity - humidity) >= 0.5 || abs(currTemperature - temperature) >= 0.1)
+            {
+                // humidity = currHumidity;
+                // temperature = currTemperature;
+                // ESP_LOGI(TAG, "Temperature: %.2f", temperature);
+                // ESP_LOGI(TAG, "Humidity: %.2f", humidity);
+
+                wifi_init_sta();
+                xEventGroupWaitBits(wifi_event_group,
+                                    WIFI_CONNECTED_BIT,
+                                    false,
+                                    false,
+                                    portMAX_DELAY);
+                // xTaskCreate(&check_update, "check_update", 2048, NULL, 5, NULL);
+                check_update();
+                mqtt_app_start();
+
+                xEventGroupWaitBits(wifi_event_group,
+                                    MQTT_CONNECTED_BIT,
                                     false,
                                     false,
                                     portMAX_DELAY);
 
-        if ((bits & (MQTT_CONNECTED_BIT | WIFI_CONNECTED_BIT)) == (MQTT_CONNECTED_BIT | WIFI_CONNECTED_BIT))
-        {
-            if (measure())
-            {
-                float currTemperature = getTemperature();
-                float currHumidity = getHumidity();
-                if((int)currHumidity != (int)humidity || currTemperature != temperature){
-                    humidity = currHumidity;
-                    temperature = currTemperature;
-                    ESP_LOGI(TAG, "Temperature: %.2f", temperature);
-                    ESP_LOGI(TAG, "Humidity: %.2f", humidity);
-                    esp_mqtt_client_publish(client, topic.c_str(), parseRecord(humidity, temperature), 0, 1, 0);
-                }
-            }
-            else
-            {
-                ESP_LOGE(TAG, "Sensor is offline.");
+                esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord(currHumidity, currTemperature), 0, 1, 0);
+                // saveRecordInNVS(currHumidity, currTemperature);
             }
 
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
-        } else if (bits & WIFI_CONNECTED_BIT)
-        {
-            ESP_LOGI(TAG, "Reconnecting MQTT");
+            esp_event_loop_delete_default();
+
+            esp_mqtt_client_stop(mqtt_client);
+            esp_wifi_stop();
+            esp_deep_sleep_start();
         }
-
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        else
+        {
+            ESP_LOGE(TAG, "Sensor is offline.");
+        }
     }
 }
-
-// mosquitto_sub -h mqtt.eclipseprojects.io -t seba123/humidity
-// mosquitto_pub -h mqtt.eclipseprojects.io -t seba123/custom -m "test"
