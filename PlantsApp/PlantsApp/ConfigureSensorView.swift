@@ -22,7 +22,7 @@ struct ConfigureSensorView: View {
     @State private var wifiSsid = ""
     @State private var wifiPassword = ""
     
-    @ObservedObject public var bleProvisioningViewModel: BleProvisioningViewModel
+    @ObservedObject public var bluetoothViewModel: BluetoothViewModel
     
     var body: some View {
         Form {
@@ -33,15 +33,15 @@ struct ConfigureSensorView: View {
                 Text("Konfiguracja wifi")
             }
             Button("Wyślij") {
-                bleProvisioningViewModel.provisionDevice(ssid: wifiSsid, passphrase: wifiPassword)
+                bluetoothViewModel.provisionDevice(ssid: wifiSsid, password: wifiPassword)
             }
             .frame(maxWidth: .infinity, alignment: .center)
             .disabled(wifiSsid.isEmpty || wifiPassword.isEmpty)
             
-            if !bleProvisioningViewModel.wifiSettingsResponse.isEmpty {
-                Text(bleProvisioningViewModel.wifiSettingsResponse)
+            if !bluetoothViewModel.wifiSettingsResponse.isEmpty {
+                Text(bluetoothViewModel.wifiSettingsResponse)
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .foregroundColor(bleProvisioningViewModel.wifiSettingsApplied ? .green : .red)
+                    .foregroundColor(bluetoothViewModel.wifiSettingsApplied ? .green : .red)
             }
         }
         .navigationTitle("Konfiguracja czujnika")
@@ -51,6 +51,6 @@ struct ConfigureSensorView: View {
 
 struct ConfigureSensorView_Previews: PreviewProvider {
     static var previews: some View {
-        ConfigureSensorView(bleProvisioningViewModel: BleProvisioningViewModel())
+        ConfigureSensorView(bluetoothViewModel: BluetoothViewModel())
     }
 }

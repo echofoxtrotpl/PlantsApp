@@ -19,7 +19,7 @@ struct AddPlantView: View {
     
     // Sensor
     @State private var selectedSensorName = ""
-    @StateObject private var bleProvisioningViewModel = BleProvisioningViewModel()
+    @StateObject private var bluetoothViewModel = BluetoothViewModel()
     @ObservedObject var mqttManager: MQTTManager
     @ObservedObject var httpClient: HttpClient
     
@@ -53,43 +53,36 @@ struct AddPlantView: View {
                     }
                 }
                 
-                if bleProvisioningViewModel.foundDevicesNames.count > 0 {
+                if bluetoothViewModel.foundDevicesNames.count > 0 {
                     Picker(selection: $selectedSensorName) {
-                        ForEach(bleProvisioningViewModel.foundDevicesNames, id: \.self) { device in
+                        ForEach(bluetoothViewModel.foundDevicesNames, id: \.self) { device in
                             Text(device)
                         }
                     } label: {
                         HStack {
                             Text("Wybierz czujnik")
                             Spacer()
-                            if bleProvisioningViewModel.connected {
+                            if bluetoothViewModel.connected {
                                 Button("Rozłącz") {
-                                    bleProvisioningViewModel.disconnect()
+                                    bluetoothViewModel.disconnect()
                                 }
                                 .foregroundColor(.red)
-                            } else {
-                                Button{
-                                    bleProvisioningViewModel.scanForDevices()
-                                } label: {
-                                    Image(systemName: "arrow.counterclockwise")
-                                        .foregroundColor(.blue)
-                                }
                             }
                         }
                     }
                     .pickerStyle(.inline)
                     
-                    if bleProvisioningViewModel.connected {
+                    if bluetoothViewModel.connected {
                         NavigationLink {
-                            ConfigureSensorView(bleProvisioningViewModel: bleProvisioningViewModel)
+                            ConfigureSensorView(bluetoothViewModel: bluetoothViewModel)
                         } label: {
                             Text("Konfiguruj czujnik")
                         }
                     }
                     
-                    if !selectedSensorName.isEmpty && !bleProvisioningViewModel.connected {
+                    if !selectedSensorName.isEmpty && !bluetoothViewModel.connected {
                         Button("Nawiąż połączenie") {
-                            bleProvisioningViewModel.connectToDevice(selectedSensorName)
+                            bluetoothViewModel.connectToPeripheral(selectedSensorName)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
                     }
@@ -113,7 +106,7 @@ struct AddPlantView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
-                .disabled(selectedSensorName.isEmpty || plantName.isEmpty || !bleProvisioningViewModel.wifiSettingsApplied
+                .disabled(selectedSensorName.isEmpty || plantName.isEmpty || !bluetoothViewModel.wifiSettingsApplied
                           || location.isEmpty)
             }
         

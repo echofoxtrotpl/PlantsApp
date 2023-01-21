@@ -36,7 +36,7 @@ extern "C" {
     #include "wifi.h"
 }
 
-#define FIRMWARE_VERSION 0.1
+#define FIRMWARE_VERSION 0.2
 #define UPDATE_JSON_URL "http://192.168.20.102:8000/ota.json"
 #define BLINK_GPIO GPIO_NUM_2
 

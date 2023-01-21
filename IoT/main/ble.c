@@ -18,6 +18,7 @@
 uint8_t ble_addr_type;
 static EventGroupHandle_t ble_event_group;
 const int BLE_PROVISIONED_BIT = BIT1;
+const int BLE_STOPPED_BIT = BIT5;
 
 void ble_app_advertise(void);
 
@@ -127,6 +128,10 @@ void ble_app_on_sync(void)
 void host_task(void *param)
 {
     nimble_port_run(); // This function will return only when nimble_port_stop() is executed
+    nimble_port_deinit();
+    esp_nimble_hci_and_controller_deinit();
+    xEventGroupSetBits(ble_event_group, BLE_STOPPED_BIT);
+    vTaskDelete(NULL);
 }
 
 void init_ble(char* device_name)
@@ -153,6 +158,9 @@ void init_ble(char* device_name)
     ESP_LOGI("GAP", "Provisioned");
 
     nimble_port_stop();
-    nimble_port_deinit();
-    esp_nimble_hci_and_controller_deinit();
+    xEventGroupWaitBits(ble_event_group,
+                        BLE_STOPPED_BIT,
+                        false,
+                        true,
+                        portMAX_DELAY);
 }

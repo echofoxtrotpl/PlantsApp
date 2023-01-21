@@ -41,3 +41,8 @@ struct MqttMessage: Codable {
     var humidity: Double
     var temperature: Double
 }
+
+struct WifiCredentials: Codable {
+    var ssid: String
+    var password: String
+}
