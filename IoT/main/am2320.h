@@ -1,5 +1,5 @@
-#ifndef AM2303_H
-#define AM2303_H
+#ifndef AM2320_H
+#define AM2320_H
 
 #define AM2320_ADDR 0x5C
 
