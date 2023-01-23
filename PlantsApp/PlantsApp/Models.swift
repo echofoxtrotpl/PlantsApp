@@ -46,3 +46,24 @@ struct WifiCredentials: Codable {
     var ssid: String
     var password: String
 }
+
+struct LoginDto: Codable {
+    var email: String
+    var password: String
+}
+
+struct SignupDto: Codable {
+    var email: String
+    var password: String
+    var firstName: String
+    var lastName: String
+}
+
+struct LoginResponseDto: Codable {
+    var accessToken: String
+    var userId: String
+}
+
+struct PlantsResponseDto: Codable {
+    var plants: [Plant]
+}

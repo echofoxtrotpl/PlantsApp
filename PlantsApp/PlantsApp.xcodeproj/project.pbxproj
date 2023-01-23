@@ -26,6 +26,9 @@
 		9E7D2E322932419D006BCCED /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = 9E7D2E312932419D006BCCED /* Podfile */; };
 		9E7D2E3629324AC9006BCCED /* BleProvisioningViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */; };
 		9E7D2E3A29327939006BCCED /* ConfigureSensorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */; };
+		9EC334AF297EFF130059B40F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC334AE297EFF130059B40F /* LoginView.swift */; };
+		9EC334B1297F01C00059B40F /* PlantsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC334B0297F01C00059B40F /* PlantsView.swift */; };
+		9EC334B3297F06E70059B40F /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC334B2297F06E70059B40F /* RegisterView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +52,9 @@
 		9E7D2E312932419D006BCCED /* Podfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; };
 		9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleProvisioningViewModel.swift; sourceTree = "<group>"; };
 		9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigureSensorView.swift; sourceTree = "<group>"; };
+		9EC334AE297EFF130059B40F /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		9EC334B0297F01C00059B40F /* PlantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantsView.swift; sourceTree = "<group>"; };
+		9EC334B2297F06E70059B40F /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		9ECA8FDEDCE9E4168402823B /* Pods-PlantsApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PlantsApp.debug.xcconfig"; path = "Target Support Files/Pods-PlantsApp/Pods-PlantsApp.debug.xcconfig"; sourceTree = "<group>"; };
 		FEEB937427D3B6DB8B78906E /* Pods_PlantsApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PlantsApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -121,6 +127,9 @@
 				9E7D2E3529324AC9006BCCED /* BleProvisioningViewModel.swift */,
 				9E7D2E3929327939006BCCED /* ConfigureSensorView.swift */,
 				9E6986CE29367B9000226701 /* MqttViewModel.swift */,
+				9EC334AE297EFF130059B40F /* LoginView.swift */,
+				9EC334B0297F01C00059B40F /* PlantsView.swift */,
+				9EC334B2297F06E70059B40F /* RegisterView.swift */,
 			);
 			path = PlantsApp;
 			sourceTree = "<group>";
@@ -257,12 +266,15 @@
 				9E2437402920184D00797E6A /* BluetoothViewModel.swift in Sources */,
 				9E5690B02905574D0065B0D4 /* PlantDetailedView.swift in Sources */,
 				9E044C56292111DB0068F5BF /* HttpClient.swift in Sources */,
+				9EC334B3297F06E70059B40F /* RegisterView.swift in Sources */,
 				9E56909C290528E30065B0D4 /* ContentView.swift in Sources */,
 				9E5690B22905721B0065B0D4 /* ProgressChart.swift in Sources */,
 				9E56909A290528E30065B0D4 /* PlantsAppApp.swift in Sources */,
 				9E7D2E3A29327939006BCCED /* ConfigureSensorView.swift in Sources */,
 				9E044C58292138C60068F5BF /* Models.swift in Sources */,
+				9EC334AF297EFF130059B40F /* LoginView.swift in Sources */,
 				9E5690AE290549EC0065B0D4 /* TagPill.swift in Sources */,
+				9EC334B1297F01C00059B40F /* PlantsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

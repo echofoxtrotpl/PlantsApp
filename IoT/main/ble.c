@@ -43,13 +43,6 @@ static int handle_write_config(uint16_t conn_handle, uint16_t attr_handle, struc
     return 0;
 }
 
-// Read data from ESP32 defined as server
-// static int handle_read_config(uint16_t con_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-// {
-//     os_mbuf_append(ctxt->om, "Response from server 123", strlen("Response from server 123"));
-//     return 0;
-// }
-
 // Array of pointers to other service definitions
 static const struct ble_gatt_svc_def gatt_svcs[] = {
     {

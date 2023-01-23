@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AddPlantView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) var dismissAddView
     
     @State private var plantName = ""
     @State private var maxHumidity = 100
@@ -101,12 +101,12 @@ struct AddPlantView: View {
                         let success = await httpClient.addPlant(newPlant)
                         if (success) {
                             mqttManager.subscribe(topic: "\(newPlant.sensorName)/records")
-                            dismiss()
+                            dismissAddView()
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
-                .disabled(selectedSensorName.isEmpty || plantName.isEmpty || !bluetoothViewModel.wifiSettingsApplied
+                .disabled(selectedSensorName.isEmpty || plantName.isEmpty
                           || location.isEmpty)
             }
         

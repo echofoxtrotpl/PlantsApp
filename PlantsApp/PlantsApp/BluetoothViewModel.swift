@@ -55,7 +55,7 @@ class BluetoothViewModel : NSObject, ObservableObject {
     
     func provisionDevice(ssid: String, password: String) {
         if connectedPeripheral != nil {
-            var wifiCredentials = WifiCredentials(ssid: ssid, password: password)
+            let wifiCredentials = WifiCredentials(ssid: ssid, password: password)
             let encoded = try! JSONEncoder().encode(wifiCredentials)
             send(String(decoding: encoded, as: UTF8.self))
         }
@@ -120,7 +120,7 @@ extension BluetoothViewModel: CBPeripheralDelegate {
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
             if characteristic.uuid == notifyCharacteristic, let data = characteristic.value {
-                var response = String(data: data, encoding: String.Encoding.utf8)!
+                let response = String(data: data, encoding: String.Encoding.utf8)!
                 DispatchQueue.main.async {
                     if(response == "success"){
                         self.wifiSettingsResponse = "Successfuly provisioned device!"
