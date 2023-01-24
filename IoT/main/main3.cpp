@@ -184,6 +184,7 @@ void setup_sleep()
 
 static void get_device_service_name(char *service_name, size_t max)
 {
+    init_wifi();
     uint8_t eth_mac[6];
     const char *ssid_prefix = "PROV_";
     esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
@@ -192,6 +193,9 @@ static void get_device_service_name(char *service_name, size_t max)
     ESP_LOGI(TAG, "Service name in get device service name: %s", service_name);
     topic = service_name;
     topic = topic + "/records";
+    // ESP_LOGI(TAG, "Topic in get device service name: %s", topic);
+    ESP_LOGI(TAG, "Service name in get device service name after assign: %s", service_name);
+    
 }
 
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -248,6 +252,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_PUBLISHED:
         xEventGroupSetBits(mqtt_event_group, MQTT_PUBLISHED_BIT);
         ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        // ESP_LOGW(TAG, "MQTT_EVENT_PUBLISHED, topic=%s", topic.c_str());
+        // ESP_LOGW(TAG, "MQTT_EVENT_PUBLISHED, event->topic=%s", event->topic);
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
@@ -397,7 +403,7 @@ extern "C" void app_main(void)
                 {
                     ESP_LOGI(TAG, "Already provisioned");
 
-                    init_wifi();
+                    // init_wifi();
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
                         ESP_LOGE(TAG, "Couldn't connect, resetting credentials");
@@ -411,7 +417,7 @@ extern "C" void app_main(void)
                     init_ble(service_name);
                     ESP_LOGI(TAG, "After provisioning");
                     getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS);
-                    init_wifi();
+                    // init_wifi();
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
                         ESP_LOGE(TAG, "Couldn't connect, resetting credentials");
@@ -478,6 +484,7 @@ extern "C" void app_main(void)
         else
         {
             ESP_LOGE(TAG, "Sensor is offline.");
+            esp_deep_sleep_start();
         }
     }
 }
