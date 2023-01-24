@@ -113,7 +113,7 @@ extension MQTTManager: CocoaMQTTDelegate {
         let decodedMessage = try! JSONDecoder().decode(MqttMessage.self, from: Data(message.string!.description.utf8))
         let sensorName = message.topic.components(separatedBy: "/")[0]
         DispatchQueue.main.async {
-            self.records[sensorName] = RecordStruct(temperature: decodedMessage.temperature, humidity: Int(decodedMessage.humidity), updatedAt: Date(), sensorName: sensorName)
+            self.records[sensorName] = RecordStruct(temperature: decodedMessage.temperature, humidity: Int(decodedMessage.humidity), updatedAt: Date(timeIntervalSince1970: decodedMessage.updatedAt), sensorName: sensorName)
         }
     }
 

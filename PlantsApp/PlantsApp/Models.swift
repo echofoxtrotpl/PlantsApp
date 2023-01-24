@@ -40,6 +40,7 @@ class Record: ObservableObject {
 struct MqttMessage: Codable {
     var humidity: Double
     var temperature: Double
+    var updatedAt: Double
 }
 
 struct WifiCredentials: Codable {

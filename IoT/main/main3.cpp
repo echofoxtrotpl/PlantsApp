@@ -28,6 +28,7 @@
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 #include "esp_sleep.h"
+#include <time.h>
 
 #include "am2320.h"
 extern "C"
@@ -40,9 +41,6 @@ extern "C"
 #define FIRMWARE_VERSION 0.2
 #define UPDATE_JSON_URL "http://192.168.20.102:8000/ota.json"
 #define BLINK_GPIO GPIO_NUM_2
-
-extern const uint8_t server_cert_pem_start[] asm("_binary_certificate_pem_start");
-extern const uint8_t server_cert_pem_end[] asm("_binary_certificate_pem_end");
 
 static const char *TAG = "app";
 static const char *CONFIG_BROKER_URL = "mqtt://mqtt.eclipseprojects.io";
@@ -129,7 +127,6 @@ void check_update()
 
                         esp_http_client_config_t ota_client_config = {
                             .url = file->valuestring,
-                            .cert_pem = (char *)server_cert_pem_start,
                         };
                         esp_err_t ret = esp_https_ota(&ota_client_config);
                         if (ret == ESP_OK)
@@ -192,6 +189,7 @@ static void get_device_service_name(char *service_name, size_t max)
     esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
     snprintf(service_name, max, "%s%02X%02X%02X",
              ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
+    ESP_LOGI(TAG, "Service name in get device service name: %s", service_name);
     topic = service_name;
     topic = topic + "/records";
 }
@@ -221,16 +219,19 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
     mqtt_client = event->client;
     int msg_id;
+    ESP_LOGI(TAG, "Service name in mqtt handler: %s", service_name);
+    std::string device_name = service_name;
     switch ((esp_mqtt_event_id_t)event_id)
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
-        esp_mqtt_client_subscribe(mqtt_client, "/iot/plants/numOfReads", 1);
-        esp_mqtt_client_subscribe(mqtt_client, "/iot/plants/minTemperature", 1);
-        esp_mqtt_client_subscribe(mqtt_client, "/iot/plants/maxTemperature", 1);
-        esp_mqtt_client_subscribe(mqtt_client, "/iot/plants/maxHumidity", 1);
-        esp_mqtt_client_subscribe(mqtt_client, "/iot/plants/minHumidity", 1);
+        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/numOfReads").c_str(), 1);
+        ESP_LOGI(TAG, "SUBSCRIBED on topic: %s", (device_name + "/numOfReads").c_str());
+        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/minTemperature").c_str(), 1);
+        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxTemperature").c_str(), 1);
+        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxHumidity").c_str(), 1);
+        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/minHumidity").c_str(), 1);
 
         xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_BIT);
         break;
@@ -253,40 +254,40 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
         ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
 
-        if (strcmp(event->topic, (const char *)"/iot/plants/numOfReads") == 0)
+        if (strcmp(event->topic, (device_name + "/numOfReads").c_str()) == 0)
         {
             int numOfReads = atoi(event->data);
 
             saveInNVS("numOfReads", numOfReads);
         }
 
-        if (strcmp(event->topic, (const char *)"/iot/plants/minTemperature") == 0)
+        if (strcmp(event->topic, (device_name + "/minTemperature").c_str()) == 0)
         {
             int minTemperature = atoi(event->data);
 
             saveInNVS("minTemperature", minTemperature);
         }
 
-        if (strcmp(event->topic, (const char *)"/iot/plants/maxTemperature") == 0)
+        if (strcmp(event->topic, (device_name + "/maxTemperature").c_str()) == 0)
         {
             int maxTemperature = atoi(event->data);
 
             saveInNVS("maxTemperature", maxTemperature);
         }
 
-        if (strcmp(event->topic, (const char *)"/iot/plants/minHumidity") == 0)
+        if (strcmp(event->topic, (device_name + "/minHumidity").c_str()) == 0)
         {
             int minHumidity = atoi(event->data);
 
             saveInNVS("minHumidity", minHumidity);
         }
-        
-        if (strcmp(event->topic, (const char *)"/iot/plants/maxHumidity") == 0)
+
+        if (strcmp(event->topic, (device_name + "/maxHumidity").c_str()) == 0)
         {
             int maxHumidity = atoi(event->data);
 
             saveInNVS("maxHumidity", maxHumidity);
-        }        
+        }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -313,6 +314,9 @@ static char *parseRecord(float hum, float temp)
 
     cJSON *temperature = cJSON_CreateNumber(temp);
     cJSON_AddItemToObject(json, "temperature", temperature);
+
+    cJSON *updatedAt = cJSON_CreateNumber((int)time(NULL));
+    cJSON_AddItemToObject(json, "updatedAt", updatedAt);
 
     return cJSON_Print(json);
 }
@@ -352,7 +356,7 @@ extern "C" void app_main(void)
 
     char *ssidFromNVS = NULL;
     char *passwordFromNVS = NULL;
-    
+
     if (getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS) == 0)
     {
         init_ble(service_name);
@@ -364,7 +368,7 @@ extern "C" void app_main(void)
         {
             float currTemperature = getTemperature();
             float currHumidity = getHumidity();
-        
+
             ESP_LOGI(TAG, "Current humidity: %f", currHumidity);
             ESP_LOGI(TAG, "Current temperature: %f", currTemperature);
 
@@ -378,7 +382,7 @@ extern "C" void app_main(void)
 
             int maxTemperature = getConfigFromNVSBy("maxTemperature");
             maxTemperature = maxTemperature == -1 ? 27 : maxTemperature;
-            
+
             int minHumidity = getConfigFromNVSBy("minHumidity");
             minHumidity = minHumidity == -1 ? 20 : minHumidity;
 
@@ -427,17 +431,17 @@ extern "C" void app_main(void)
                                     false,
                                     portMAX_DELAY);
 
-
                 int temperature = 0;
                 int humidity = 0;
 
                 // wyślij wszystkie temperatury na mqtt
-                for(int i = 1; i <= counter; ++i) {
+                for (int i = 1; i <= counter; ++i)
+                {
                     getRecordsFromNVS(&humidity, &temperature, i);
-                    
+
                     ESP_LOGI(TAG, "HUM in loop from nvs: %f", (float)humidity / 100);
                     ESP_LOGI(TAG, "TEMP in loop from nvs: %f", (float)temperature / 100);
-                    
+
                     esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord((float)humidity / 100, (float)temperature / 100), 0, 1, 1);
                     xEventGroupWaitBits(mqtt_event_group,
                                         MQTT_PUBLISHED_BIT,
@@ -447,7 +451,8 @@ extern "C" void app_main(void)
                     xEventGroupClearBits(mqtt_event_group, MQTT_PUBLISHED_BIT);
                 }
 
-                if(currTemperature <= minTemperature || currTemperature >= maxTemperature || currHumidity <= minHumidity || currHumidity >= maxHumidity) {
+                if (currTemperature <= minTemperature || currTemperature >= maxTemperature || currHumidity <= minHumidity || currHumidity >= maxHumidity)
+                {
                     esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord(currHumidity, currTemperature), 0, 1, 1);
                     xEventGroupWaitBits(mqtt_event_group,
                                         MQTT_PUBLISHED_BIT,
@@ -458,15 +463,16 @@ extern "C" void app_main(void)
                 }
 
                 clearCounter();
-                
+
                 esp_event_loop_delete_default();
                 esp_mqtt_client_stop(mqtt_client);
                 esp_wifi_stop();
-
-            } else {
+            }
+            else
+            {
                 saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100));
             }
-   
+
             esp_deep_sleep_start();
         }
         else
