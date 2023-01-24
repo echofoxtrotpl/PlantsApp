@@ -145,29 +145,63 @@ static int client_ble_gap_event(struct ble_gap_event *event, void *arg)
 
     switch (event->type)
     {
-    // NimBLE event discovery
     case BLE_GAP_EVENT_DISC:
-        ESP_LOGI("GAP", "GAP EVENT DISCOVERY");
         ble_hs_adv_parse_fields(&fields, event->disc.data, event->disc.length_data);
         if (fields.name_len > 0)
         {
-            printf("Name: %.*s\n", fields.name_len, fields.name);
             if (fields.name != NULL)
             {
-                if (strlen(remote_device_name) == fields.name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0)
+                if (strlen(remote_device_name) == fields.name_len && strncmp((char *)fields.name, remote_device_name, fields.name_len) == 0)
                 {
-                    ESP_LOGI(GATTC_TAG, "searched device %s\n", remote_device_name);
-                    if (connect == false)
+                    uint8_t own_addr_type;
+                    ble_addr_t *addr;
+
+                    ESP_LOGI("BLE Client", "Found MI device %s", remote_device_name);
+                    if (ble_gap_disc_cancel() != 0)
                     {
-                        connect = true;
-                        ESP_LOGI(GATTC_TAG, "connect to the remote device.");
-                        esp_ble_gap_stop_scanning();
-                        esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, scan_result->scan_rst.bda, scan_result->scan_rst.ble_addr_type, true);
+                        ESP_LOGE("BLE Client", "Failed to cancel scan");
+                        return;
+                    }
+
+                    /* Figure out address to use for connect (no privacy for now) */
+                    if (ble_hs_id_infer_auto(0, &own_addr_type) != 0)
+                    {
+                        ESP_LOGE("BLE Client", "error determining address type");
+                        return;
+                    }
+
+                    /* Try to connect the the advertiser. Allow 10s*/
+                    addr = &((struct ble_gap_disc_desc *)&event->disc)->addr;
+
+                    if (ble_gap_connect(own_addr_type, addr, 10000, NULL, client_ble_gap_event, NULL) != 0)
+                    {
+                        ESP_LOGE("BLE Client", "Error: Failed to connect to device");
+                        return;
                     }
                 }
             }
         }
         break;
+    case BLE_GAP_EVENT_CONNECT:
+        /* A new connection was established or a connection attempt failed. */
+        if (event->connect.status == 0)
+        {
+            /* Connection successfully established. */
+            ESP_LOGI("BLE Client", "Connection to Mi device established ");
+        }
+        else
+        {
+            /* Connection attempt failed; resume scanning. */
+            ESP_LOGE("BLE Client", "Connection error");
+            //xEventGroupSetBits(ble_event_group, BLE_GOT_RECORDS_FROM_MI_BIT);
+        }
+
+        return 0;
+
+    case BLE_GAP_EVENT_DISCONNECT:
+        /* Connection terminated. */
+        ESP_LOGI("BLE Client", "Mi device has disconnected");
+        return 0;
     default:
         break;
     }
