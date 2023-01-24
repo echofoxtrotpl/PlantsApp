@@ -15,5 +15,7 @@ int clearCounter();
 
 int saveInNVS(const char* key, int value);
 
+int clearCredentialsFromNVS();
+
 int getConfigFromNVSBy(const char *key);
 #endif

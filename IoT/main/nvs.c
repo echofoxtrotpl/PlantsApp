@@ -289,3 +289,32 @@ int getConfigFromNVSBy(const char *key)
     nvs_close(my_handle);
     return value;
 }
+
+int clearCredentialsFromNVS()
+{
+    nvs_handle_t my_handle;
+
+    if (nvs_open("storage", NVS_READWRITE, &my_handle) != ESP_OK)
+    {
+        ESP_LOGE("NVS", "Error opening NVS handle!");
+        nvs_close(my_handle);
+        return -1;
+    }
+
+    if (nvs_erase_key(my_handle, "ssid") != ESP_OK)
+    {
+        ESP_LOGI("NVS", "SSID was not stored in NVS");
+        nvs_close(my_handle);
+        return -1;
+    }
+
+    if (nvs_erase_key(my_handle, "password") != ESP_OK)
+    {
+        ESP_LOGI("NVS", "Password was not stored in NVS");
+        nvs_close(my_handle);
+        return -1;
+    }
+
+    nvs_close(my_handle);
+    return 0;
+}

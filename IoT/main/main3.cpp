@@ -29,6 +29,7 @@
 #include "lwip/netdb.h"
 #include "esp_sleep.h"
 #include <time.h>
+#include <driver/gpio.h>
 
 #include "am2320.h"
 extern "C"
@@ -41,6 +42,7 @@ extern "C"
 #define FIRMWARE_VERSION 0.2
 #define UPDATE_JSON_URL "http://192.168.20.102:8000/ota.json"
 #define BLINK_GPIO GPIO_NUM_2
+#define BUTTON_GPIO GPIO_NUM_0
 
 static const char *TAG = "app";
 static const char *CONFIG_BROKER_URL = "mqtt://mqtt.eclipseprojects.io";
@@ -49,6 +51,8 @@ static const uint64_t TIME_IN_US = 20e6; // 20 sekund
 
 // receive buffer
 char rcv_buffer[100];
+
+bool button_state = 0;
 
 // esp_http_client event handler
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
@@ -164,10 +168,10 @@ esp_mqtt_client_handle_t mqtt_client;
 char service_name[12];
 std::string topic;
 
-static void blink_led(void)
+static void turn_on_led_for(int time)
 {
     gpio_set_level(BLINK_GPIO, 1);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
+    vTaskDelay(time / portTICK_PERIOD_MS);
     gpio_set_level(BLINK_GPIO, 0);
 }
 
@@ -175,6 +179,47 @@ static void configure_led(void)
 {
     gpio_reset_pin(BLINK_GPIO);
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+}
+
+void button_detection_task(void *arg)
+{
+    int counter = 0;
+    while (1)
+    {
+        // Read the current state of the button
+        bool new_state = gpio_get_level(BUTTON_GPIO);
+
+        if (new_state != button_state)
+        {
+
+            if (new_state == 0)
+            {
+                ++counter;
+            }
+
+            button_state = new_state;
+            // reset credentials after 3 clicks
+            if(counter == 3) {
+                clearCredentialsFromNVS();
+                vTaskDelete(NULL);
+                esp_restart();
+            }
+        }
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+}
+
+void configure_reset_credentials_button() {
+    gpio_install_isr_service(0);
+
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1 << BUTTON_GPIO),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+    };
+    gpio_config(&io_conf);
+
+    xTaskCreate(button_detection_task, "button_detection_task", 2048, NULL, 5, NULL);
 }
 
 void setup_sleep()
@@ -190,12 +235,8 @@ static void get_device_service_name(char *service_name, size_t max)
     esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
     snprintf(service_name, max, "%s%02X%02X%02X",
              ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
-    ESP_LOGI(TAG, "Service name in get device service name: %s", service_name);
     topic = service_name;
     topic = topic + "/records";
-    // ESP_LOGI(TAG, "Topic in get device service name: %s", topic);
-    ESP_LOGI(TAG, "Service name in get device service name after assign: %s", service_name);
-    
 }
 
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -205,17 +246,6 @@ static void log_error_if_nonzero(const char *message, int error_code)
         ESP_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
-
-/*
- * @brief Event handler registered to receive MQTT events
- *
- *  This function is called by the MQTT client event loop.
- *
- * @param handler_args user data registered to the event.
- * @param base Event base for the handler(always MQTT Base in this example).
- * @param event_id The id for the received event.
- * @param event_data The data for the event, esp_mqtt_event_handle_t.
- */
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -252,8 +282,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_PUBLISHED:
         xEventGroupSetBits(mqtt_event_group, MQTT_PUBLISHED_BIT);
         ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-        // ESP_LOGW(TAG, "MQTT_EVENT_PUBLISHED, topic=%s", topic.c_str());
-        // ESP_LOGW(TAG, "MQTT_EVENT_PUBLISHED, event->topic=%s", event->topic);
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
@@ -356,6 +384,8 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     configure_led();
+    configure_reset_credentials_button();
+    turn_on_led_for(5000);
     setup_sleep();
     initSensor();
     get_device_service_name(service_name, sizeof(service_name));
