@@ -402,6 +402,7 @@ extern "C" void app_main(void)
     {
         if (measure())
         {
+            //getTemperatureAndHumidityFromMI();
             float currTemperature = getTemperature();
             float currHumidity = getHumidity();
 
@@ -436,8 +437,8 @@ extern "C" void app_main(void)
                     // init_wifi();
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
-                        ESP_LOGE(TAG, "Couldn't connect, resetting credentials");
-                        nvs_flash_erase();
+                        saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100));
+                        ESP_LOGE(TAG, "Couldn't connect, restarting");
                         esp_restart();
                     }
                 }
@@ -450,8 +451,8 @@ extern "C" void app_main(void)
                     // init_wifi();
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
-                        ESP_LOGE(TAG, "Couldn't connect, resetting credentials");
-                        nvs_flash_erase();
+                        saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100));
+                        ESP_LOGE(TAG, "Couldn't connect, restarting");
                         esp_restart();
                     }
                 }

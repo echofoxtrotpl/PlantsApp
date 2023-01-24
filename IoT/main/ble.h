@@ -3,4 +3,6 @@
 
 void init_ble(char *device_name);
 
+//void getTemperatureAndHumidityFromMI();
+
 #endif
