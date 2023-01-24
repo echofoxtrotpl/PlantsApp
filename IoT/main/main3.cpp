@@ -30,6 +30,8 @@
 #include "esp_sleep.h"
 #include <time.h>
 #include <driver/gpio.h>
+#include "driver/adc.h"
+#include "esp_adc_cal.h"
 
 #include "am2320.h"
 extern "C"
@@ -179,6 +181,12 @@ static void configure_led(void)
 {
     gpio_reset_pin(BLINK_GPIO);
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+}
+
+void configure_potentiometer()
+{
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_11);
 }
 
 void button_detection_task(void *arg)
@@ -384,8 +392,12 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     configure_led();
-    configure_reset_credentials_button();
-    turn_on_led_for(5000);
+    configure_potentiometer();
+    int analog_value = adc1_get_raw(ADC1_CHANNEL_0);
+    if(analog_value != 0) {
+        configure_reset_credentials_button();
+        turn_on_led_for(analog_value);
+    }
     setup_sleep();
     initSensor();
     get_device_service_name(service_name, sizeof(service_name));
@@ -395,14 +407,15 @@ extern "C" void app_main(void)
 
     if (getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS) == 0)
     {
-        init_ble(service_name);
+        provision_device(service_name);
     }
 
     while (1)
     {
         if (measure())
         {
-            //getTemperatureAndHumidityFromMI();
+            getRecordsFromMiDevice();
+                // getTemperatureAndHumidityFromMI();
             float currTemperature = getTemperature();
             float currHumidity = getHumidity();
 
@@ -434,7 +447,6 @@ extern "C" void app_main(void)
                 {
                     ESP_LOGI(TAG, "Already provisioned");
 
-                    // init_wifi();
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
                         saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100));
@@ -445,10 +457,9 @@ extern "C" void app_main(void)
                 else
                 {
                     ESP_LOGI(TAG, "Waiting for provisioning");
-                    init_ble(service_name);
+                    provision_device(service_name);
                     ESP_LOGI(TAG, "After provisioning");
                     getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS);
-                    // init_wifi();
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
                         saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100));
