@@ -11,9 +11,18 @@ struct PlantDemoCard: View {
     var plant: Plant
     @ObservedObject var mqttManager: MQTTManager
     @ObservedObject var httpClient: HttpClient
+    @AppStorage private var lastRecord: CodableWrapper<RecordStruct>
+    
+    init(plant: Plant, mqttManager: MQTTManager, httpClient: HttpClient){
+        self.plant = plant
+        self.mqttManager = mqttManager
+        self.httpClient = httpClient
+        self._lastRecord = AppStorage(wrappedValue: .init(value: RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date(), sensorName: plant.sensorName)), plant.sensorName)
+    }
+    
     private var record: RecordStruct {
         get {
-            mqttManager.records[plant.sensorName] ?? RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date(), sensorName: "")
+            mqttManager.records[plant.sensorName]?.last ?? lastRecord.value
         }
     }
     private var isTempExceeded: Bool {

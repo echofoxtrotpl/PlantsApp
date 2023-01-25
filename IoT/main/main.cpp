@@ -56,7 +56,6 @@ char rcv_buffer[100];
 
 bool button_state = 0;
 
-// esp_http_client event handler
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
 
@@ -90,12 +89,10 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 // Check update task
 void check_update()
 {
-    printf("Looking for a new firmware...\n");
+    ESP_LOGI(TAG, "Looking for a new firmware...\n");
 
-    // configure the esp_http_client
     esp_http_client_config_t config = {
         .url = UPDATE_JSON_URL,
-        //.cert_pem = (char *)server_cert_pem_start,
         .timeout_ms = 10000,
         .event_handler = _http_event_handler,
 
@@ -106,11 +103,10 @@ void check_update()
     esp_err_t err = esp_http_client_perform(client);
     if (err == ESP_OK)
     {
-
         // parse the json file
         cJSON *json = cJSON_Parse(rcv_buffer);
         if (json == NULL)
-            printf("downloaded file is not a valid json, aborting...\n");
+            ESP_LOGE(TAG, "downloaded file is not a valid json, aborting...\n");
         else
         {
             cJSON *version = cJSON_GetObjectItemCaseSensitive(json, "version");
@@ -118,7 +114,7 @@ void check_update()
 
             // check the version
             if (!cJSON_IsNumber(version))
-                printf("unable to read new version, aborting...\n");
+                ESP_LOGE(TAG, "unable to read new version, aborting...\n");
             else
             {
 
@@ -126,10 +122,10 @@ void check_update()
                 if (new_version > FIRMWARE_VERSION)
                 {
 
-                    printf("current firmware version (%.1f) is lower than the available one (%.1f), upgrading...\n", FIRMWARE_VERSION, new_version);
+                    ESP_LOGI(TAG, "current firmware version (%.1f) is lower than the available one (%.1f), upgrading...\n", FIRMWARE_VERSION, new_version);
                     if (cJSON_IsString(file) && (file->valuestring != NULL))
                     {
-                        printf("downloading and installing new firmware (%s)...\n", file->valuestring);
+                        ESP_LOGI(TAG, "downloading and installing new firmware (%s)...\n", file->valuestring);
 
                         esp_http_client_config_t ota_client_config = {
                             .url = file->valuestring,
@@ -137,26 +133,25 @@ void check_update()
                         esp_err_t ret = esp_https_ota(&ota_client_config);
                         if (ret == ESP_OK)
                         {
-                            printf("OTA OK, restarting...\n");
+                            ESP_LOGI(TAG, "OTA OK, restarting...\n");
                             esp_restart();
                         }
                         else
                         {
-                            printf("OTA failed...\n");
+                            ESP_LOGE(TAG, "OTA failed...\n");
                         }
                     }
                     else
-                        printf("unable to read the new file name, aborting...\n");
+                        ESP_LOGE(TAG, "unable to read the new file name, aborting...\n");
                 }
                 else
-                    printf("current firmware version (%.1f) is greater or equal to the available one (%.1f), nothing to do...\n", FIRMWARE_VERSION, new_version);
+                    ESP_LOGI(TAG, "current firmware version (%.1f) is greater or equal to the available one (%.1f), nothing to do...\n", FIRMWARE_VERSION, new_version);
             }
         }
     }
     else
-        printf("unable to download the json file, aborting...\n");
+        ESP_LOGE(TAG, "unable to download the json file, aborting...\n");
 
-    // cleanup
     esp_http_client_cleanup(client);
 }
 
@@ -199,13 +194,13 @@ void button_detection_task(void *arg)
 
         if (new_state != button_state)
         {
-
             if (new_state == 0)
             {
                 ++counter;
             }
 
             button_state = new_state;
+
             // reset credentials after 3 clicks
             if(counter == 3) {
                 clearCredentialsFromNVS();
@@ -261,15 +256,14 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
     mqtt_client = event->client;
     int msg_id;
-    ESP_LOGI(TAG, "Service name in mqtt handler: %s", service_name);
     std::string device_name = service_name;
+    
     switch ((esp_mqtt_event_id_t)event_id)
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/numOfReads").c_str(), 1);
-        ESP_LOGI(TAG, "SUBSCRIBED on topic: %s", (device_name + "/numOfReads").c_str());
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/minTemperature").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxTemperature").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxHumidity").c_str(), 1);
@@ -357,9 +351,6 @@ static char *parseRecord(float hum, float temp)
     cJSON *temperature = cJSON_CreateNumber(temp);
     cJSON_AddItemToObject(json, "temperature", temperature);
 
-    cJSON *updatedAt = cJSON_CreateNumber((int)time(NULL));
-    cJSON_AddItemToObject(json, "updatedAt", updatedAt);
-
     return cJSON_Print(json);
 }
 
@@ -369,14 +360,12 @@ static void mqtt_app_start(void)
         .uri = CONFIG_BROKER_URL,
     };
     mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
-    /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(mqtt_client, MQTT_EVENT_ANY, mqtt_event_handler, NULL);
     esp_mqtt_client_start(mqtt_client);
 }
 
 extern "C" void app_main(void)
 {
-    /* Initialize NVS partition */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
@@ -388,7 +377,6 @@ extern "C" void app_main(void)
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    /* Initialize the event loop */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     configure_led();
@@ -415,14 +403,12 @@ extern "C" void app_main(void)
         if (measure())
         {
             getRecordsFromMiDevice();
-                // getTemperatureAndHumidityFromMI();
             float currTemperature = getTemperature();
             float currHumidity = getHumidity();
 
             ESP_LOGI(TAG, "Current humidity: %f", currHumidity);
             ESP_LOGI(TAG, "Current temperature: %f", currTemperature);
 
-            // 5 ma byc po mqtt
             int numOfReads = getConfigFromNVSBy("numOfReads");
             numOfReads = numOfReads == -1 ? 5 : numOfReads;
             numOfReads *= 60 * 1000 * 1000 / TIME_IN_US;
@@ -482,13 +468,10 @@ extern "C" void app_main(void)
                 int temperature = 0;
                 int humidity = 0;
 
-                // wyślij wszystkie temperatury na mqtt
+                // send all collected temperatures from NVS to MQTT
                 for (int i = 1; i <= counter; ++i)
                 {
                     getRecordsFromNVS(&humidity, &temperature, i);
-
-                    ESP_LOGI(TAG, "HUM in loop from nvs: %f", (float)humidity / 100);
-                    ESP_LOGI(TAG, "TEMP in loop from nvs: %f", (float)temperature / 100);
 
                     esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord((float)humidity / 100, (float)temperature / 100), 0, 1, 1);
                     xEventGroupWaitBits(mqtt_event_group,
@@ -499,16 +482,14 @@ extern "C" void app_main(void)
                     xEventGroupClearBits(mqtt_event_group, MQTT_PUBLISHED_BIT);
                 }
 
-                if (currTemperature <= minTemperature || currTemperature >= maxTemperature || currHumidity <= minHumidity || currHumidity >= maxHumidity)
-                {
-                    esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord(currHumidity, currTemperature), 0, 1, 1);
-                    xEventGroupWaitBits(mqtt_event_group,
-                                        MQTT_PUBLISHED_BIT,
-                                        false,
-                                        false,
-                                        portMAX_DELAY);
-                    xEventGroupClearBits(mqtt_event_group, MQTT_PUBLISHED_BIT);
-                }
+                // send current temperature to MQTT 
+                esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord(currHumidity, currTemperature), 0, 1, 1);
+                xEventGroupWaitBits(mqtt_event_group,
+                                    MQTT_PUBLISHED_BIT,
+                                    false,
+                                    false,
+                                    portMAX_DELAY);
+                xEventGroupClearBits(mqtt_event_group, MQTT_PUBLISHED_BIT);
 
                 clearCounter();
 

@@ -34,12 +34,12 @@ static int handle_write_config(uint16_t conn_handle, uint16_t attr_handle, struc
 
     if (cJSON_GetObjectItem(json, "ssid") && cJSON_GetObjectItem(json, "password"))
     {
-        const char *ssid = (const char *)cJSON_GetObjectItem(json, "ssid")->valuestring; 
+        const char *ssid = (const char *)cJSON_GetObjectItem(json, "ssid")->valuestring;
         const char *password = (const char *)cJSON_GetObjectItem(json, "password")->valuestring;
 
         ESP_LOGI("BLE", "Received Wi-Fi credentials"
                         "\n\tSSID     : %s\n\tPassword : %s",
-                ssid, password);
+                 ssid, password);
         saveCredentialsInNVS(ssid, password);
         xEventGroupSetBits(ble_event_group, BLE_PROVISIONED_BIT);
     }
@@ -50,26 +50,26 @@ static int handle_write_config(uint16_t conn_handle, uint16_t attr_handle, struc
 // Array of pointers to other service definitions
 static const struct ble_gatt_svc_def gatt_svcs[] = {
     {
-        /*** Service: Security test. */
+        // Service: Security test. 
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
         .uuid = BLE_UUID16_DECLARE(0x180),
         .characteristics = (struct ble_gatt_chr_def[]){{
-                                                           /*** Characteristic: Random number generator. */
+                                                           // Characteristic: Random number generator.
                                                            .uuid = BLE_UUID16_DECLARE(0xDEA0),
                                                            .access_cb = handle_write_config,
                                                            .flags = BLE_GATT_CHR_F_WRITE,
                                                        },
                                                        {
-                                                           0, /* No more characteristics in this service. */
+                                                           0, // No more characteristics in this service. 
                                                        }},
-},
+    },
 
-                                     {
-                                         0, /* No more services. */
-                                     },
+    {
+        0, // No more services. 
+    },
 };
 
-    // BLE event handling
+// BLE event handling
 static int server_ble_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type)
@@ -100,7 +100,9 @@ void ble_app_advertise(void)
     struct ble_hs_adv_fields fields;
     const char *device_name;
     memset(&fields, 0, sizeof(fields));
-    device_name = ble_svc_gap_device_name(); // Read the BLE device name
+
+    // Read the BLE device name
+    device_name = ble_svc_gap_device_name(); 
     fields.name = (uint8_t *)device_name;
     fields.name_len = strlen(device_name);
     fields.name_is_complete = 1;
@@ -139,6 +141,72 @@ void ble_client_task(void *param)
     vTaskDelete(NULL);
 }
 
+int attr_read(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg)
+{
+    if (error->status == 0)
+    {
+        const char *char_pointer = (char *)attr->om->om_data;
+        int battery_percentage = (int)*char_pointer;
+        ESP_LOGI("Battery", "Battery level: %d %%", battery_percentage);
+        xEventGroupSetBits(ble_event_group, BLE_GOT_RECORDS_FROM_MI_BIT);
+        return BLE_HS_EDONE;
+    } else {
+        ESP_LOGE("GAP", "error status %d\n", error->status);
+    }
+    return 0;
+}
+
+static int get_val(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg)
+{
+    char buffer[80];
+    static uint16_t val_handle;
+
+    switch (error->status)
+    {
+    case BLE_HS_EDONE:
+        ble_gattc_read(conn_handle, val_handle, attr_read, NULL);
+        break;
+    case 0:
+        memset(buffer, 0, sizeof(buffer));
+        ble_uuid_to_str(&chr->uuid.u, buffer);
+        // ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6 - for temperature
+        if (strcmp(buffer, "0x2a19") == 0)
+        {
+            ESP_LOGI("CONNECT", "char %s found", buffer);
+            val_handle = chr->val_handle;
+        }
+    }
+    return 0;
+}
+
+static int findPrimaryServices(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_svc *service, void *arg)
+{
+    char buffer[80];
+    static uint16_t start = 0, end = 0;
+    switch (error->status)
+    {
+    case BLE_HS_EDONE:
+        ble_gattc_disc_all_chrs(conn_handle, start, end, get_val, NULL);
+        break;
+    case 0:
+        memset(buffer, 0, sizeof(buffer));
+        ble_uuid_to_str(&service->uuid.u, buffer);
+        // ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6 - for temperature
+        if (strcmp(buffer, "0x180f") == 0)
+        {
+            ESP_LOGI("CONNECT", "SERVICE %s found", buffer);
+            start = service->start_handle;
+            end = service->end_handle;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    return 0;
+}
+
 static int client_ble_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_hs_adv_fields fields;
@@ -163,14 +231,13 @@ static int client_ble_gap_event(struct ble_gap_event *event, void *arg)
                         return;
                     }
 
-                    /* Figure out address to use for connect (no privacy for now) */
                     if (ble_hs_id_infer_auto(0, &own_addr_type) != 0)
                     {
                         ESP_LOGE("BLE Client", "error determining address type");
                         return;
                     }
 
-                    /* Try to connect the the advertiser. Allow 10s*/
+                    // Try to connect the the advertiser. Allow 10s
                     addr = &((struct ble_gap_disc_desc *)&event->disc)->addr;
 
                     if (ble_gap_connect(own_addr_type, addr, 10000, NULL, client_ble_gap_event, NULL) != 0)
@@ -183,23 +250,20 @@ static int client_ble_gap_event(struct ble_gap_event *event, void *arg)
         }
         break;
     case BLE_GAP_EVENT_CONNECT:
-        /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0)
         {
-            /* Connection successfully established. */
             ESP_LOGI("BLE Client", "Connection to Mi device established ");
+            ble_gattc_disc_all_svcs(event->connect.conn_handle, findPrimaryServices, NULL);
         }
         else
         {
-            /* Connection attempt failed; resume scanning. */
             ESP_LOGE("BLE Client", "Connection error");
-            //xEventGroupSetBits(ble_event_group, BLE_GOT_RECORDS_FROM_MI_BIT);
+            xEventGroupSetBits(ble_event_group, BLE_GOT_RECORDS_FROM_MI_BIT);
         }
 
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
-        /* Connection terminated. */
         ESP_LOGI("BLE Client", "Mi device has disconnected");
         return 0;
     default:
@@ -233,10 +297,10 @@ void client_on_sync(void)
 void getRecordsFromMiDevice()
 {
     ble_event_group = xEventGroupCreate();
-    esp_nimble_hci_and_controller_init();           // 2 - Initialize ESP controller
-    nimble_port_init();                             // 3 - Initialize the controller stack
-    ble_svc_gap_init();                             // 4 - Initialize GAP service
-    ble_hs_cfg.sync_cb = client_on_sync;            // 5 - Set application
+    esp_nimble_hci_and_controller_init(); // 2 - Initialize ESP controller
+    nimble_port_init();                   // 3 - Initialize the controller stack
+    ble_svc_gap_init();                   // 4 - Initialize GAP service
+    ble_hs_cfg.sync_cb = client_on_sync;  // 5 - Set application
     nimble_port_freertos_init(ble_client_task);
 
     ESP_LOGI("BLE Client", "Waiting for records from MI");
@@ -258,7 +322,7 @@ void getRecordsFromMiDevice()
     vEventGroupDelete(ble_event_group);
 }
 
-void provision_device(char* device_name) 
+void provision_device(char *device_name)
 {
     ble_event_group = xEventGroupCreate();
     esp_nimble_hci_and_controller_init();     // 2 - Initialize ESP controller
@@ -289,5 +353,3 @@ void provision_device(char* device_name)
                         portMAX_DELAY);
     vEventGroupDelete(ble_event_group);
 }
-
-// https:// github.com/espressif/esp-idf/blob/master/examples/bluetooth/nimble/blecent/main/main.c

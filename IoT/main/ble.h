@@ -5,6 +5,4 @@ void provision_device(char *device_name);
 
 void getRecordsFromMiDevice();
 
-//void getTemperatureAndHumidityFromMI();
-
 #endif

@@ -11,18 +11,27 @@ struct PlantDetailedView: View {
     var plant: Plant
     @AppStorage private var lastRecord: CodableWrapper<RecordStruct>
     @ObservedObject var mqttManager: MQTTManager
-    
+    @State private var editingHumidity = false
+    @State private var editingTemperature = false
+    @State private var maxHumidity = 100
+    @State private var minHumidity = 0
+    @State private var maxTemperature: Double = 0.0
+    @State private var minTemperature: Double = 0.0
     let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     
     init(mqttManager: MQTTManager, plant: Plant) {
         self.plant = plant
         self._lastRecord = AppStorage(wrappedValue: .init(value: RecordStruct(temperature: 0.0, humidity: 0, updatedAt: Date(), sensorName: plant.sensorName)), plant.sensorName)
-        self.mqttManager = mqttManager;
+        self.mqttManager = mqttManager
+        self.maxHumidity = plant.maxHumidity
+        self.minHumidity = plant.minHumidity
+        self.maxTemperature = plant.maxTemperature
+        self.minTemperature = plant.minTemperature
     }
     
     private var record: RecordStruct {
         get {
-            mqttManager.records[plant.sensorName] ?? lastRecord.value
+            mqttManager.records[plant.sensorName]?.last ?? lastRecord.value
         }
     }
     
@@ -92,7 +101,7 @@ struct PlantDetailedView: View {
                             }
                             .animation(.easeInOut, value: record.temperature)
                         }
-                        .padding(30)
+                        .padding(20)
                         VStack(alignment: .leading, spacing: 30){
                             HStack{
                                 Text("Idealne warunki")
@@ -101,17 +110,65 @@ struct PlantDetailedView: View {
                                     .padding(.bottom, 5)
                             }
                             HStack{
+                                Button {
+                                    editingHumidity = !editingHumidity
+                                } label: {
+                                    Image(systemName: "pencil")
+                                }
                                 Text("Wilgotność")
                                 Spacer()
-                                Text("\(plant.minHumidity)% - \(plant.maxHumidity)%")
+                                if !editingHumidity {
+                                    Text("\(plant.minHumidity)% - \(plant.maxHumidity)%")
+                                } else {
+                                    HStack {
+                                        Picker("Minimalna wilgotość", selection: $minHumidity) {
+                                            ForEach(0...maxHumidity, id: \.self) {
+                                                Text($0, format: .percent)
+                                            }
+                                        }
+                                        Picker("Maksymalna wilgotość", selection: $maxHumidity) {
+                                            ForEach(minHumidity...100, id: \.self) {
+                                                Text($0, format: .percent)
+                                            }
+                                        }
+                                    }
+                                    
+                                    Button("Zapisz"){
+                                        editingHumidity = false
+                                    }
+                                }
                             }
                             HStack{
+                                Button {
+                                    editingTemperature = !editingTemperature
+                                } label: {
+                                    Image(systemName: "pencil")
+                                }
                                 Text("Temperatura")
                                 Spacer()
-                                Text("\(String(format: "%.1f°C", plant.minTemperature)) - \(String(format: "%.1f°C", plant.maxTemperature))")
+                                if !editingTemperature {
+                                    Text("\(String(format: "%.1f°C", plant.minTemperature)) - \(String(format: "%.1f°C", plant.maxTemperature))")
+                                } else {
+                                    HStack {
+                                        Picker("Minimalna temperatura", selection: $minTemperature) {
+                                            ForEach(Array(stride(from: -20.0, to: maxTemperature, by: 0.1)), id: \.self) {
+                                                Text($0, format: .number)
+                                            }
+                                        }
+                                        Picker("Maksymalna temperatura", selection: $maxTemperature) {
+                                            ForEach(Array(stride(from: minTemperature, to: 50.0, by: 0.1)), id: \.self) {
+                                                Text($0, format: .number)
+                                            }
+                                        }
+                                    }
+                                    Button("Zapisz"){
+                                        editingTemperature = false
+                                    }
+                                }
+                                
                             }
                         }
-                        .padding(30)
+                        .padding(20)
                     }
                 }
                 .background(

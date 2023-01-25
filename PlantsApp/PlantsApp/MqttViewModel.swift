@@ -17,7 +17,7 @@ final class MQTTManager: ObservableObject {
     private var topics: [String]!
     
     @Published var receivedMessage: String = ""
-    @Published var records: [String: RecordStruct] = [:]
+    @Published var records: [String: [RecordStruct]] = [:]
     
     // MARK: Shared Instance
     private static let _shared = MQTTManager()
@@ -113,7 +113,13 @@ extension MQTTManager: CocoaMQTTDelegate {
         let decodedMessage = try! JSONDecoder().decode(MqttMessage.self, from: Data(message.string!.description.utf8))
         let sensorName = message.topic.components(separatedBy: "/")[0]
         DispatchQueue.main.async {
-            self.records[sensorName] = RecordStruct(temperature: decodedMessage.temperature, humidity: Int(decodedMessage.humidity), updatedAt: Date(timeIntervalSince1970: decodedMessage.updatedAt), sensorName: sensorName)
+            let record = RecordStruct(temperature: decodedMessage.temperature, humidity: Int(decodedMessage.humidity), updatedAt: Date(), sensorName: sensorName)
+            if self.records[sensorName] != nil {
+                self.records[sensorName]!.append(record)
+            } else {
+                self.records[sensorName] = [record]
+            }
+            
         }
     }
 

@@ -33,7 +33,6 @@ int saveCredentialsInNVS(const char *ssid, const char *password)
             return -1;
         }
 
-        // Close
         nvs_close(my_handle);
         return 0;
     }
@@ -129,7 +128,6 @@ int saveRecordsInNVS(int humidity, int temperature)
             return -1;
         }
 
-        // Close
         nvs_close(my_handle);
         return 0;
     }
@@ -171,9 +169,6 @@ int getRecordsFromNVS(int *humidity, int *temperature, int data_count)
         return 0;
     }
 
-    // ESP_LOGI("NVS", "HUM in getRecordsFromNVS: %f", (float)(* humidity) / 100);
-    // ESP_LOGI("NVS", "TEMP in getRecordsFromNVS: %f", (float)(* temperature) / 100);
-    
     nvs_close(my_handle);
     
     return 1;

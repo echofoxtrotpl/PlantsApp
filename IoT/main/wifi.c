@@ -12,7 +12,7 @@ static EventGroupHandle_t wifi_event_group;
 static int connected = 0;
 static int tries = 1;
 
-/* Event handler for catching system events */
+// Event handler for catching system events
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data)
 {
@@ -24,7 +24,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Connected with IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
-        /* Signal main application to continue execution */
+        // Signal main application to continue execution
         connected = 1;
         xEventGroupSetBits(wifi_event_group, WIFI_BIT);
     }
@@ -37,20 +37,19 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         }
         tries += 1;
         ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
-        //blink_led();
         esp_wifi_connect();
     }
 }
 
 void init_wifi() {
-    /* Initialize TCP/IP */
+    // Initialize TCP/IP
     ESP_ERROR_CHECK(esp_netif_init());
 
-    /* Register our event handler for Wi-Fi, IP events */
+    // Register our event handler for Wi-Fi, IP events
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
-    /* Initialize Wi-Fi including netif with default config */
+    // Initialize Wi-Fi including netif with default config
     esp_netif_create_default_wifi_sta();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -61,7 +60,7 @@ int start_wifi(const char* ssid, const char* password) {
 
     wifi_config_t wifi_config = {
         .sta = {
-            /* Incase Access point doesn't support WPA2, these mode can be enabled by commenting below line */
+            // Incase Access point doesn't support WPA2, these mode can be enabled by commenting below line
             .threshold.authmode = WIFI_AUTH_OPEN,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
         },
