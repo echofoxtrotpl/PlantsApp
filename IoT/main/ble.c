@@ -265,6 +265,7 @@ static int client_ble_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI("BLE Client", "Mi device has disconnected");
+        xEventGroupSetBits(ble_event_group, BLE_GOT_RECORDS_FROM_MI_BIT);
         return 0;
     default:
         break;

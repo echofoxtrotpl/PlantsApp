@@ -62,6 +62,27 @@ final class HttpClient: ObservableObject {
         }.resume()
     }
     
+    func updatePlant(_ plant: Plant) async -> Bool {
+        let url = URL(string: baseUrl + "user/\(userId)/plant/\(plant.id!)")!
+        
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwtToken)", forHTTPHeaderField: "Authorization")
+        request.httpMethod = "POST"
+        
+        do {
+            let encoded = try JSONEncoder().encode(plant)
+            let (_, response) = try await URLSession.shared.upload(for: request, from: encoded)
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                return false
+            }
+            return true
+        } catch {
+            print("Update plant failed.")
+            return false
+        }
+    }
+    
     func login(dto: LoginDto) async -> Bool {
         let url = URL(string: baseUrl + "login")!
         

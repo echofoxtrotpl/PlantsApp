@@ -65,8 +65,8 @@ final class MQTTManager: ObservableObject {
         mqttClient?.subscribe(topic, qos: .qos1)
     }
 
-    func publish(with message: String, on topic: String) {
-        mqttClient?.publish(topic, withString: message, qos: .qos1)
+    func publish(with message: String, on topic: String, retain: Bool = false) {
+        mqttClient?.publish(topic, withString: message, qos: .qos1, retained: retain)
     }
 
     func disconnect() {

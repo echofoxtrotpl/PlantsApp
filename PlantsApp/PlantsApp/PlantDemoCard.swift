@@ -42,7 +42,7 @@ struct PlantDemoCard: View {
         HStack{
             Spacer()
             NavigationLink {
-                PlantDetailedView(mqttManager: mqttManager, plant: plant)
+                PlantDetailedView(mqttManager: mqttManager, plant: plant, httpClient: httpClient)
             } label: {
                 ZStack{
                     RoundedCorner(radius: 45, corners: [.bottomLeft, .topLeft])

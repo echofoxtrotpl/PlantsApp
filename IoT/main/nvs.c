@@ -266,7 +266,7 @@ int saveInNVS(const char* key, int value)
 int getConfigFromNVSBy(const char *key)
 {
     nvs_handle_t my_handle;
-    uint32_t value;
+    int value;
 
     if (nvs_open("storage", NVS_READWRITE, &my_handle) != ESP_OK)
     {
@@ -275,7 +275,7 @@ int getConfigFromNVSBy(const char *key)
         return -1;
     }
 
-    if (nvs_get_u32(my_handle, key, &value) != ESP_OK)
+    if (nvs_get_i16(my_handle, key, &value) != ESP_OK)
     {
         ESP_LOGI("NVS", "No %s saved in NVS", key);
         nvs_close(my_handle);
