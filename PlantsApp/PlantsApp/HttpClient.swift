@@ -8,14 +8,14 @@
 import Foundation
 
 final class HttpClient: ObservableObject {
-    @Published var baseUrl = "http://130.61.149.252:8880/heatingsystem/api/iot/"
+    @Published var baseUrl = "http://130.61.149.252:8880/heatingsystem/api/"
     @Published var jwtToken = ""
     @Published var userId = ""
     
     func getPlants() async -> [Plant] {
         var response: [Plant] = []
         
-        let url = URL(string: baseUrl + "user/\(userId)/plants")!
+        let url = URL(string: baseUrl + "iot/user/\(userId)/plants")!
         
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -29,9 +29,29 @@ final class HttpClient: ObservableObject {
         
         return response
     }
+    
+    func getLastRecords(_ plantId: Int) async -> [RecordDto] {
+        var response: [RecordDto] = []
+        
+        let url = URL(string: baseUrl + "measurements/plant/\(plantId)")!
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            
+            if let decodedResponse = try? decoder.decode(Measurments.self, from: data) {
+                response = decodedResponse.measurements
+            }
+        } catch {
+            print("Invalid data")
+        }
+        
+        return response
+    }
 
     func addPlant(_ plant: Plant) async -> Bool{
-        let url = URL(string: baseUrl + "user/\(userId)/plant")!
+        let url = URL(string: baseUrl + "iot/user/\(userId)/plant")!
         
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -52,7 +72,7 @@ final class HttpClient: ObservableObject {
     }
 
     func removePlant(_ plantId: Int) async -> Void {
-        let url = URL(string: baseUrl + "user/\(userId)/plant/\(plantId)")!
+        let url = URL(string: baseUrl + "iot/user/\(userId)/plant/\(plantId)")!
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
@@ -63,7 +83,7 @@ final class HttpClient: ObservableObject {
     }
     
     func updatePlant(_ plant: Plant) async -> Bool {
-        let url = URL(string: baseUrl + "user/\(userId)/plant/\(plant.id!)")!
+        let url = URL(string: baseUrl + "iot/user/\(userId)/plant/\(plant.id!)")!
         
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -84,7 +104,7 @@ final class HttpClient: ObservableObject {
     }
     
     func login(dto: LoginDto) async -> Bool {
-        let url = URL(string: baseUrl + "login")!
+        let url = URL(string: baseUrl + "iot/login")!
         
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -109,7 +129,7 @@ final class HttpClient: ObservableObject {
     }
     
     func signup(dto: SignupDto) async -> Bool {
-        let url = URL(string: baseUrl + "register")!
+        let url = URL(string: baseUrl + "iot/register")!
         
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

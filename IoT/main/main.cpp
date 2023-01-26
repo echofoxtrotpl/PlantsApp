@@ -473,7 +473,7 @@ extern "C" void app_main(void)
                 {
                     getRecordsFromNVS(&humidity, &temperature, i);
 
-                    esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord((float)humidity / 100, (float)temperature / 100), 0, 1, 1);
+                    esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord((float)humidity / 100, (float)temperature / 100), 0, 1, 0);
                     xEventGroupWaitBits(mqtt_event_group,
                                         MQTT_PUBLISHED_BIT,
                                         false,
@@ -483,7 +483,7 @@ extern "C" void app_main(void)
                 }
 
                 // send current temperature to MQTT 
-                esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord(currHumidity, currTemperature), 0, 1, 1);
+                esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord(currHumidity, currTemperature), 0, 1, 0);
                 xEventGroupWaitBits(mqtt_event_group,
                                     MQTT_PUBLISHED_BIT,
                                     false,

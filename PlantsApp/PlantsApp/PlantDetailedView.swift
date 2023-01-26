@@ -14,10 +14,13 @@ struct PlantDetailedView: View {
     @ObservedObject var httpClient: HttpClient
     @State private var editingHumidity = false
     @State private var editingTemperature = false
+    @State private var editingNumOfReads = false
     @State private var maxHumidity: Int
     @State private var minHumidity: Int
     @State private var maxTemperature: Double
     @State private var minTemperature: Double
+    @State private var numOfReads: Int
+    @State private var history: [RecordDto] = []
     let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     
     init(mqttManager: MQTTManager, plant: Plant, httpClient: HttpClient) {
@@ -29,6 +32,7 @@ struct PlantDetailedView: View {
         self.minHumidity = plant.minHumidity
         self.maxTemperature = plant.maxTemperature
         self.minTemperature = plant.minTemperature
+        self.numOfReads = 20
     }
     
     private var record: RecordStruct {
@@ -106,10 +110,40 @@ struct PlantDetailedView: View {
                         .padding(20)
                         VStack(alignment: .leading, spacing: 30){
                             HStack{
-                                Text("Idealne warunki")
+                                Text("Konfiguracja")
                                     .font(.title2)
                                     .bold()
                                     .padding(.bottom, 5)
+                            }
+                            HStack{
+                                Button {
+                                    editingNumOfReads = !editingNumOfReads
+                                } label: {
+                                    Image(systemName: "pencil")
+                                }
+                                Text("Częstotliwość pomiarów")
+                                Spacer()
+                                if !editingNumOfReads {
+                                    Text("\(numOfReads)")
+                                } else {
+                                    Picker("Częstotliwość pomiarów", selection: $numOfReads) {
+                                        ForEach(0...100, id: \.self) { num in
+                                            Text("\(num)")
+                                        }
+                                    }
+                                    
+                                    Button("Zapisz"){
+                                        Task {
+                                            let res = await httpClient.updatePlant(Plant(id: plant.id, familiarName: plant.familiarName, location: plant.location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: plant.maxTemperature, minTemperature: plant.minTemperature, sensorName: plant.sensorName))
+                                            if res {
+                                                DispatchQueue.main.async {
+                                                    editingNumOfReads = false
+                                                }
+                                                mqttManager.publish(with: "\(numOfReads)", on: "\(plant.sensorName)/numOfReads", retain: true)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             HStack{
                                 Button {
@@ -120,7 +154,7 @@ struct PlantDetailedView: View {
                                 Text("Wilgotność")
                                 Spacer()
                                 if !editingHumidity {
-                                    Text("\(plant.minHumidity)% - \(plant.maxHumidity)%")
+                                    Text("\(minHumidity)% - \(maxHumidity)%")
                                 } else {
                                     HStack {
                                         Picker("Minimalna wilgotość", selection: $minHumidity) {
@@ -158,7 +192,7 @@ struct PlantDetailedView: View {
                                 Text("Temperatura")
                                 Spacer()
                                 if !editingTemperature {
-                                    Text("\(String(format: "%.1f°C", plant.minTemperature)) - \(String(format: "%.1f°C", plant.maxTemperature))")
+                                    Text("\(String(format: "%.1f°C", minTemperature)) - \(String(format: "%.1f°C", maxTemperature))")
                                 } else {
                                     HStack {
                                         Picker("Minimalna temperatura", selection: $minTemperature) {
@@ -190,6 +224,36 @@ struct PlantDetailedView: View {
                             }
                         }
                         .padding(20)
+                        VStack(alignment: .leading, spacing: 30){
+                            
+                            HStack{
+                                Text("Historia")
+                                    .font(.title2)
+                                    .bold()
+                                    .padding(.bottom, 5)
+                                Spacer()
+                            }
+                            Group{
+                                if history.count > 0 {
+                                    ForEach(history, id: \.timestamp) { item in
+                                        HStack{
+                                            Text(item.timestamp, format: .dateTime)
+                                            Spacer()
+                                            Text(String(format: "%.1f°C", item.temperature))
+                                            Spacer()
+                                            Text("\(item.humidity)%")
+                                        }
+                                    }
+                                } else {
+                                    Text("Brak danych historycznych")
+                                }
+                            }
+                            
+                        }
+                        .padding(20)
+                        .task {
+                            history = await httpClient.getLastRecords(plant.id!)
+                        }
                     }
                 }
                 .background(
