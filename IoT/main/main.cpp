@@ -202,7 +202,8 @@ void button_detection_task(void *arg)
             button_state = new_state;
 
             // reset credentials after 3 clicks
-            if(counter == 3) {
+            if (counter == 3)
+            {
                 clearCredentialsFromNVS();
                 vTaskDelete(NULL);
                 esp_restart();
@@ -212,7 +213,8 @@ void button_detection_task(void *arg)
     }
 }
 
-void configure_reset_credentials_button() {
+void configure_reset_credentials_button()
+{
     gpio_install_isr_service(0);
 
     gpio_config_t io_conf = {
@@ -257,13 +259,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     mqtt_client = event->client;
     int msg_id;
     std::string device_name = service_name;
-    
+
     switch ((esp_mqtt_event_id_t)event_id)
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
-        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/numOfReads").c_str(), 1);
+        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/pushIntervalInMinutes").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/minTemperature").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxTemperature").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxHumidity").c_str(), 1);
@@ -290,25 +292,25 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
         ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
 
-        if (strcmp(event->topic, (device_name + "/numOfReads").c_str()) == 0)
+        if (strcmp(event->topic, (device_name + "/pushIntervalInMinutes").c_str()) == 0)
         {
-            int numOfReads = atoi(event->data);
+            int pushIntervalInMinutes = atoi(event->data);
 
-            saveInNVS("numOfReads", numOfReads);
+            saveInNVS("pushInterval", pushIntervalInMinutes);
         }
 
         if (strcmp(event->topic, (device_name + "/minTemperature").c_str()) == 0)
         {
-            int minTemperature = atoi(event->data);
+            float minTemperature = std::stof(event->data);
 
-            saveInNVS("minTemperature", minTemperature);
+            saveInNVS("minTemperature", (int)(minTemperature * 100));
         }
 
         if (strcmp(event->topic, (device_name + "/maxTemperature").c_str()) == 0)
         {
-            int maxTemperature = atoi(event->data);
+            float maxTemperature = std::stof(event->data);
 
-            saveInNVS("maxTemperature", maxTemperature);
+            saveInNVS("maxTemperature", (int)(maxTemperature * 100));
         }
 
         if (strcmp(event->topic, (device_name + "/minHumidity").c_str()) == 0)
@@ -354,6 +356,80 @@ static char *parseRecord(float hum, float temp)
     return cJSON_Print(json);
 }
 
+char *create_json(float currTemperature, float currHumidity)
+{
+    int temperature = 0;
+    int humidity = 0;
+
+    cJSON *root, *measurements;
+
+    root = cJSON_CreateObject();
+    measurements = cJSON_CreateArray();
+    cJSON_AddItemToObject(root, "measurements", measurements);
+
+        // add current record
+    cJSON *measurement = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(measurement, "temperature", cJSON_CreateNumber(currTemperature));
+    cJSON_AddItemToObject(measurement, "humidity", cJSON_CreateNumber(currHumidity));
+
+    cJSON_AddItemToArray(measurements, measurement);
+
+    // send all collected temperatures from NVS to MQTT
+    int counter = getCounterFromNVS();
+    for (int i = counter; i >= 1; --i)
+    {
+        getRecordsFromNVS(&humidity, &temperature, i);
+
+        cJSON *measurement = cJSON_CreateObject();
+
+        cJSON_AddItemToObject(measurement, "temperature", cJSON_CreateNumber((float)temperature / 100));
+        cJSON_AddItemToObject(measurement, "humidity", cJSON_CreateNumber((float)humidity / 100));
+
+        cJSON_AddItemToArray(measurements, measurement);
+    }
+
+    // add interval
+    cJSON_AddItemToObject(root, "interval", cJSON_CreateNumber((float)TIME_IN_US / 1000000));
+
+    char *out = cJSON_Print(root);
+    ESP_LOGI(TAG, "%s", out);
+    // cJSON_Delete(measurements);
+    cJSON_Delete(root);
+
+    return out;
+}
+
+void push_data_to_server(float currTemperature, float currHumidity)
+{
+    char *json = create_json(currTemperature, currHumidity);
+    char URL[75] = "http://130.61.149.252:8880/heatingsystem/api/measurements/plant/";
+    ESP_LOGI(TAG, "URL: %s", URL);
+    strcat(URL, service_name);
+    esp_http_client_config_t config = {
+        .url = URL,
+        .method = HTTP_METHOD_POST,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    esp_http_client_set_post_field(client, json, strlen(json));
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK)
+    {
+        ESP_LOGI(TAG, "Status = %d, content_length = %d",
+                 esp_http_client_get_status_code(client),
+                 esp_http_client_get_content_length(client));
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+    free(json);
+}
+
 static void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
@@ -382,7 +458,8 @@ extern "C" void app_main(void)
     configure_led();
     configure_potentiometer();
     int analog_value = adc1_get_raw(ADC1_CHANNEL_0);
-    if(analog_value != 0) {
+    if (analog_value != 0)
+    {
         configure_reset_credentials_button();
         turn_on_led_for(analog_value);
     }
@@ -409,15 +486,15 @@ extern "C" void app_main(void)
             ESP_LOGI(TAG, "Current humidity: %f", currHumidity);
             ESP_LOGI(TAG, "Current temperature: %f", currTemperature);
 
-            int numOfReads = getConfigFromNVSBy("numOfReads");
-            numOfReads = numOfReads == -1 ? 5 : numOfReads;
-            numOfReads *= 60 * 1000 * 1000 / TIME_IN_US;
+            int pushIntervalInMinutes = getConfigFromNVSBy("pushInterval");
+            pushIntervalInMinutes = pushIntervalInMinutes == -1 ? 5 : pushIntervalInMinutes;
+            int numOfReads = (pushIntervalInMinutes * 60 * 1000 * 1000) / TIME_IN_US;
 
-            int minTemperature = getConfigFromNVSBy("minTemperature");
-            minTemperature = minTemperature == -1 ? 16 : minTemperature;
+            int minTempFromNVS = getConfigFromNVSBy("minTemperature");
+            float minTemperature = minTempFromNVS == -1 ? 16 : (float)minTempFromNVS / 100;
 
-            int maxTemperature = getConfigFromNVSBy("maxTemperature");
-            maxTemperature = maxTemperature == -1 ? 27 : maxTemperature;
+            int maxTempFromNVS = getConfigFromNVSBy("maxTemperature");
+            float maxTemperature = maxTempFromNVS == -1 ? 27 : (float)maxTempFromNVS / 100;
 
             int minHumidity = getConfigFromNVSBy("minHumidity");
             minHumidity = minHumidity == -1 ? 20 : minHumidity;
@@ -465,24 +542,9 @@ extern "C" void app_main(void)
                                     false,
                                     portMAX_DELAY);
 
-                int temperature = 0;
-                int humidity = 0;
+                push_data_to_server(currTemperature, currHumidity);
 
-                // send all collected temperatures from NVS to MQTT
-                for (int i = 1; i <= counter; ++i)
-                {
-                    getRecordsFromNVS(&humidity, &temperature, i);
-
-                    esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord((float)humidity / 100, (float)temperature / 100), 0, 1, 0);
-                    xEventGroupWaitBits(mqtt_event_group,
-                                        MQTT_PUBLISHED_BIT,
-                                        false,
-                                        false,
-                                        portMAX_DELAY);
-                    xEventGroupClearBits(mqtt_event_group, MQTT_PUBLISHED_BIT);
-                }
-
-                // send current temperature to MQTT 
+                // send current temperature to MQTT
                 esp_mqtt_client_publish(mqtt_client, topic.c_str(), parseRecord(currHumidity, currTemperature), 0, 1, 0);
                 xEventGroupWaitBits(mqtt_event_group,
                                     MQTT_PUBLISHED_BIT,

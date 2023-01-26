@@ -16,6 +16,7 @@ struct Plant: Codable {
     var maxTemperature: Double
     var minTemperature: Double
     var sensorName: String
+    var pushIntervalInMinutes: Int
 }
 
 struct RecordStruct: Codable {

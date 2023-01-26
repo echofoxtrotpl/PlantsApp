@@ -34,14 +34,16 @@ final class HttpClient: ObservableObject {
         var response: [RecordDto] = []
         
         let url = URL(string: baseUrl + "measurements/plant/\(plantId)")!
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .formatted(dateFormatter)
         
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
-            
             if let decodedResponse = try? decoder.decode(Measurments.self, from: data) {
                 response = decodedResponse.measurements
+                print(decodedResponse)
             }
         } catch {
             print("Invalid data")

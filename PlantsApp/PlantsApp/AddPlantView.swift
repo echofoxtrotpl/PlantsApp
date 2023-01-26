@@ -113,7 +113,7 @@ struct AddPlantView: View {
     }
     
     func createPlant() -> Plant {
-        return Plant(familiarName: plantName, location: location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: maxTemperature, minTemperature: minTemperature, sensorName: selectedSensorName)
+        return Plant(familiarName: plantName, location: location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: maxTemperature, minTemperature: minTemperature, sensorName: selectedSensorName, pushIntervalInMinutes: 5)
     }
 }
 

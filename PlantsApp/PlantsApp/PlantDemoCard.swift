@@ -22,7 +22,7 @@ struct PlantDemoCard: View {
     
     private var record: RecordStruct {
         get {
-            mqttManager.records[plant.sensorName]?.last ?? lastRecord.value
+            mqttManager.records[plant.sensorName] ?? lastRecord.value
         }
     }
     private var isTempExceeded: Bool {
@@ -97,6 +97,6 @@ struct PlantDemoCard: View {
 
 struct PlantDemoCard_Previews: PreviewProvider {
     static var previews: some View {
-        PlantDemoCard(plant: Plant(familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22, minTemperature: 18, sensorName: ""), mqttManager: MQTTManager(), httpClient: HttpClient())
+        PlantDemoCard(plant: Plant(familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22, minTemperature: 18, sensorName: "", pushIntervalInMinutes: 20), mqttManager: MQTTManager(), httpClient: HttpClient())
     }
 }

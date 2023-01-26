@@ -14,12 +14,12 @@ struct PlantDetailedView: View {
     @ObservedObject var httpClient: HttpClient
     @State private var editingHumidity = false
     @State private var editingTemperature = false
-    @State private var editingNumOfReads = false
+    @State private var editingPushIntervalInMinutes = false
     @State private var maxHumidity: Int
     @State private var minHumidity: Int
     @State private var maxTemperature: Double
     @State private var minTemperature: Double
-    @State private var numOfReads: Int
+    @State private var pushIntervalInMinutes: Int
     @State private var history: [RecordDto] = []
     let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     
@@ -32,12 +32,12 @@ struct PlantDetailedView: View {
         self.minHumidity = plant.minHumidity
         self.maxTemperature = plant.maxTemperature
         self.minTemperature = plant.minTemperature
-        self.numOfReads = 20
+        self.pushIntervalInMinutes = plant.pushIntervalInMinutes
     }
     
     private var record: RecordStruct {
         get {
-            mqttManager.records[plant.sensorName]?.last ?? lastRecord.value
+            mqttManager.records[plant.sensorName] ?? lastRecord.value
         }
     }
     
@@ -117,29 +117,29 @@ struct PlantDetailedView: View {
                             }
                             HStack{
                                 Button {
-                                    editingNumOfReads = !editingNumOfReads
+                                    editingPushIntervalInMinutes = !editingPushIntervalInMinutes
                                 } label: {
                                     Image(systemName: "pencil")
                                 }
-                                Text("Częstotliwość pomiarów")
+                                Text("Częstotliwość wysyłki")
                                 Spacer()
-                                if !editingNumOfReads {
-                                    Text("\(numOfReads)")
+                                if !editingPushIntervalInMinutes {
+                                    Text("\(2 * pushIntervalInMinutes) min")
                                 } else {
-                                    Picker("Częstotliwość pomiarów", selection: $numOfReads) {
-                                        ForEach(0...100, id: \.self) { num in
-                                            Text("\(num)")
+                                    Picker("Częstotliwość wysyłki", selection: $pushIntervalInMinutes) {
+                                        ForEach(1...60, id: \.self) { time in
+                                            Text("\(2 * time) min")
                                         }
                                     }
                                     
                                     Button("Zapisz"){
                                         Task {
-                                            let res = await httpClient.updatePlant(Plant(id: plant.id, familiarName: plant.familiarName, location: plant.location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: plant.maxTemperature, minTemperature: plant.minTemperature, sensorName: plant.sensorName))
+                                            let res = await httpClient.updatePlant(Plant(id: plant.id, familiarName: plant.familiarName, location: plant.location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: plant.maxTemperature, minTemperature: plant.minTemperature, sensorName: plant.sensorName, pushIntervalInMinutes: pushIntervalInMinutes))
                                             if res {
                                                 DispatchQueue.main.async {
-                                                    editingNumOfReads = false
+                                                    editingPushIntervalInMinutes = false
                                                 }
-                                                mqttManager.publish(with: "\(numOfReads)", on: "\(plant.sensorName)/numOfReads", retain: true)
+                                                mqttManager.publish(with: "\(pushIntervalInMinutes)", on: "\(plant.sensorName)/pushIntervalInMinutes", retain: true)
                                             }
                                         }
                                     }
@@ -171,7 +171,7 @@ struct PlantDetailedView: View {
                                     
                                     Button("Zapisz"){
                                         Task {
-                                            let res = await httpClient.updatePlant(Plant(id: plant.id, familiarName: plant.familiarName, location: plant.location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: plant.maxTemperature, minTemperature: plant.minTemperature, sensorName: plant.sensorName))
+                                            let res = await httpClient.updatePlant(Plant(id: plant.id, familiarName: plant.familiarName, location: plant.location, maxHumidity: maxHumidity, minHumidity: minHumidity, maxTemperature: plant.maxTemperature, minTemperature: plant.minTemperature, sensorName: plant.sensorName, pushIntervalInMinutes: plant.pushIntervalInMinutes))
                                             if res {
                                                 DispatchQueue.main.async {
                                                     editingHumidity = false
@@ -208,7 +208,7 @@ struct PlantDetailedView: View {
                                     }
                                     Button("Zapisz"){
                                         Task {
-                                            let res = await httpClient.updatePlant(Plant(id: plant.id, familiarName: plant.familiarName, location: plant.location, maxHumidity: plant.maxHumidity, minHumidity: plant.minHumidity, maxTemperature: maxTemperature, minTemperature: minTemperature, sensorName: plant.sensorName))
+                                            let res = await httpClient.updatePlant(Plant(id: plant.id, familiarName: plant.familiarName, location: plant.location, maxHumidity: plant.maxHumidity, minHumidity: plant.minHumidity, maxTemperature: maxTemperature, minTemperature: minTemperature, sensorName: plant.sensorName, pushIntervalInMinutes: plant.pushIntervalInMinutes))
                                             if res {
                                                 DispatchQueue.main.async {
                                                     editingTemperature = false
@@ -232,6 +232,13 @@ struct PlantDetailedView: View {
                                     .bold()
                                     .padding(.bottom, 5)
                                 Spacer()
+                                Button {
+                                    Task{
+                                        history = await httpClient.getLastRecords(plant.id!)
+                                    }
+                                } label: {
+                                    Image(systemName: "arrow.counterclockwise")
+                                }
                             }
                             Group{
                                 if history.count > 0 {
@@ -241,7 +248,7 @@ struct PlantDetailedView: View {
                                             Spacer()
                                             Text(String(format: "%.1f°C", item.temperature))
                                             Spacer()
-                                            Text("\(item.humidity)%")
+                                            Text(String(format: "%.1f%%", item.humidity))
                                         }
                                     }
                                 } else {
@@ -251,9 +258,6 @@ struct PlantDetailedView: View {
                             
                         }
                         .padding(20)
-                        .task {
-                            history = await httpClient.getLastRecords(plant.id!)
-                        }
                     }
                 }
                 .background(
@@ -271,6 +275,6 @@ struct PlantDetailedView: View {
 
 struct PlantDetailedView_Previews: PreviewProvider {
     static var previews: some View {
-        PlantDetailedView(mqttManager: MQTTManager(), plant: Plant(id: 1, familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22.1, minTemperature: 18.3, sensorName: "test"), httpClient: HttpClient())
+        PlantDetailedView(mqttManager: MQTTManager(), plant: Plant(id: 1, familiarName: "kwiat", location: "kuchnia", maxHumidity: 70, minHumidity: 20, maxTemperature: 22.1, minTemperature: 18.3, sensorName: "test", pushIntervalInMinutes: 20), httpClient: HttpClient())
     }
 }
