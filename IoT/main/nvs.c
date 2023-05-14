@@ -75,7 +75,7 @@ int getCredentialsFromNVS(char **ssid, char **password)
     return 1;
 }
 
-int saveRecordsInNVS(int humidity, int temperature)
+int saveRecordsInNVS(int humidity, int temperature, int insolation)
 {
     nvs_handle_t my_handle;
 
@@ -113,6 +113,17 @@ int saveRecordsInNVS(int humidity, int temperature)
             return -1;
         }
 
+        // set insolation
+        char key_insolation[6];
+        sprintf(key_insolation, "di_%d", data_count);
+
+        if (nvs_set_i16(my_handle, key_insolation, insolation) != ESP_OK)
+        {
+            ESP_LOGE("NVS", "Error saving insolation in NVS!");
+            nvs_close(my_handle);
+            return -1;
+        }
+
         // update counter
         if (nvs_set_u32(my_handle, "data_count", data_count) != ESP_OK)
         {
@@ -133,7 +144,7 @@ int saveRecordsInNVS(int humidity, int temperature)
     }
 }
 
-int getRecordsFromNVS(int *humidity, int *temperature, int data_count)
+int getRecordsFromNVS(int *humidity, int *temperature, int *insolation, int data_count)
 {
     nvs_handle_t my_handle;
     size_t required_size;
@@ -165,6 +176,17 @@ int getRecordsFromNVS(int *humidity, int *temperature, int data_count)
     if (nvs_get_i16(my_handle, key_humidity, humidity) != ESP_OK)
     {
         ESP_LOGE("NVS", "No %s saved in NVS!", key_humidity);
+        nvs_close(my_handle);
+        return 0;
+    }
+
+    // reading insolation
+    char key_insolation[6];
+    sprintf(key_insolation, "di_%d", data_count);
+
+    if (nvs_get_i16(my_handle, key_insolation, insolation) != ESP_OK)
+    {
+        ESP_LOGE("NVS", "No %s saved in NVS!", key_insolation);
         nvs_close(my_handle);
         return 0;
     }
