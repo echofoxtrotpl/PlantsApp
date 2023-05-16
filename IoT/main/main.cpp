@@ -179,12 +179,6 @@ static void configure_led(void)
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
 }
 
-void configure_potentiometer()
-{
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_11);
-}
-
 void button_detection_task(void *arg)
 {
     int counter = 0;
@@ -242,7 +236,7 @@ static void get_device_service_name(char *service_name, size_t max)
     snprintf(service_name, max, "%s%02X%02X%02X",
              ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
     topic = service_name;
-    topic = topic + "/records";
+    topic = topic + "/measurements";
 }
 
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -266,7 +260,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
-        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/numOfReads").c_str(), 1);
+        esp_mqtt_client_subscribe(mqtt_client, (device_name + "/pushInterval").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/minTemperature").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxTemperature").c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, (device_name + "/maxHumidity").c_str(), 1);
@@ -295,11 +289,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
         ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
 
-        if (strcmp(event->topic, (device_name + "/numOfReads").c_str()) == 0)
+        if (strcmp(event->topic, (device_name + "/pushInterval").c_str()) == 0)
         {
-            int numOfReads = atoi(event->data);
+            int pushInterval = atoi(event->data);
 
-            saveInNVS("numOfReads", numOfReads);
+            saveInNVS("pushInterval", pushInterval);
         }
 
         if (strcmp(event->topic, (device_name + "/minTemperature").c_str()) == 0)
@@ -427,9 +421,10 @@ void push_data_to_server(float currTemperature, float currHumidity, float currIn
 {
     char *json = create_json(currTemperature, currHumidity, currInsolation);
     // TODO: add real path and decide about name
-    char URL[75] = "http://localhost:8880/weatherapp/api/measurements/station";
-    ESP_LOGI(TAG, "URL: %s", URL);
+    char URL[150] = "http://127.0.0.1:8880/weatherstation/api/stations/";
     strcat(URL, service_name);
+    strcat(URL, "/measurements");
+    ESP_LOGI(TAG, "URL: %s", URL);
     esp_http_client_config_t config = {
         .url = URL,
         .method = HTTP_METHOD_POST,
@@ -465,8 +460,8 @@ static void mqtt_app_start(void)
 }
 
 bool shouldSendData(float currHumidity, float currTemperature, float currInsolation){
-    int numOfReadsFromNVS = getConfigFromNVSBy("numOfReads");
-    int numOfReads = numOfReadsFromNVS == -1 ? 10 : numOfReadsFromNVS;
+    int pushIntervalFromNVS = getConfigFromNVSBy("pushInterval");
+    int pushInterval = pushIntervalFromNVS == -1 ? 10 : pushIntervalFromNVS;
 
     int minTempFromNVS = getConfigFromNVSBy("minTemperature");
     float minTemperature = minTempFromNVS == -1 ? 16 : (float)minTempFromNVS / 100;
@@ -481,15 +476,15 @@ bool shouldSendData(float currHumidity, float currTemperature, float currInsolat
     maxHumidity = maxHumidity == -1 ? 80 : maxHumidity;
 
     int minInsolation = getConfigFromNVSBy("minHumidity");
-    minInsolation = minInsolation == -1 ? 0 : minInsolation;
+    minInsolation = minInsolation == -1 ? 1 : minInsolation;
 
     int maxInsolation = getConfigFromNVSBy("maxInsolation");
-    maxInsolation = maxInsolation == -1 ? 65000 : maxInsolation;
+    maxInsolation = maxInsolation == -1 ? 65350 : maxInsolation;
 
     int counter = getCounterFromNVS();
     ESP_LOGI(TAG, "Counter in main: %d", counter);
 
-    return (counter != 0 && counter % numOfReads == 0) 
+    return (counter != 0 && counter % pushInterval == 0) 
             || currTemperature <= minTemperature 
             || currTemperature >= maxTemperature 
             || currHumidity <= minHumidity 
@@ -514,13 +509,9 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     
     configure_led();
-    configure_potentiometer();
-    int analog_value = adc1_get_raw(ADC1_CHANNEL_0);
-    if (analog_value != 0)
-    {
-        configure_reset_credentials_button();
-        turn_on_led_for(analog_value);
-    }
+    configure_reset_credentials_button();
+    turn_on_led_for(5000);
+    
     setup_sleep();
     initAM2320Sensor();
     initBH1750Sensor();
@@ -531,15 +522,14 @@ extern "C" void app_main(void)
 
     if (getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS) == 0)
     {
-        saveCredentialsInNVS("NaszaSiec.NET_43D4A9", "5OhTC9RSHS");
-        //provision_device(service_name);
+        //saveCredentialsInNVS("NaszaSiec.NET_43D4A9", "5OhTC9RSHS");
+        provision_device(service_name);
     }
 
     while (1)
     {
         if (measureTemperatureAndHumidity() && measureInsolation())
         {
-            getRecordsFromMiDevice();
             float currTemperature = getTemperature();
             float currHumidity = getHumidity();
             float currInsolation = getInsolation();
