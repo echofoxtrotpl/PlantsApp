@@ -32,8 +32,10 @@
 #include <driver/gpio.h>
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
+#include "Wire.h"
 
 #include "am2320.h"
+#include "bh1750.h"
 extern "C"
 {
 #include "nvs.h"
@@ -95,7 +97,6 @@ void check_update()
         .url = UPDATE_JSON_URL,
         .timeout_ms = 10000,
         .event_handler = _http_event_handler,
-
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
@@ -128,7 +129,7 @@ void check_update()
                         ESP_LOGI(TAG, "downloading and installing new firmware (%s)...\n", file->valuestring);
 
                         esp_http_client_config_t ota_client_config = {
-                            .url = file->valuestring,
+                            .url = file->valuestring
                         };
                         esp_err_t ret = esp_https_ota(&ota_client_config);
                         if (ret == ESP_OK)
@@ -359,7 +360,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-static char *parseRecord(float hum, float temp, int ins)
+static char *parseRecord(float hum, float temp, float ins)
 {
     cJSON *json = cJSON_CreateObject();
 
@@ -375,7 +376,7 @@ static char *parseRecord(float hum, float temp, int ins)
     return cJSON_Print(json);
 }
 
-char *create_json(float currTemperature, float currHumidity, int currInsolation)
+char *create_json(float currTemperature, float currHumidity, float currInsolation)
 {
     int temperature = 0;
     int humidity = 0;
@@ -387,7 +388,7 @@ char *create_json(float currTemperature, float currHumidity, int currInsolation)
     measurements = cJSON_CreateArray();
     cJSON_AddItemToObject(root, "measurements", measurements);
 
-        // add current record
+    // add current record
     cJSON *measurement = cJSON_CreateObject();
 
     cJSON_AddItemToObject(measurement, "temperature", cJSON_CreateNumber(currTemperature));
@@ -406,7 +407,7 @@ char *create_json(float currTemperature, float currHumidity, int currInsolation)
 
         cJSON_AddItemToObject(measurement, "temperature", cJSON_CreateNumber((float)temperature / 100));
         cJSON_AddItemToObject(measurement, "humidity", cJSON_CreateNumber((float)humidity / 100));
-        cJSON_AddItemToObject(measurement, "insolation", cJSON_CreateNumber(insolation));
+        cJSON_AddItemToObject(measurement, "insolation", cJSON_CreateNumber((float)insolation / 100));
 
         cJSON_AddItemToArray(measurements, measurement);
     }
@@ -422,7 +423,7 @@ char *create_json(float currTemperature, float currHumidity, int currInsolation)
     return out;
 }
 
-void push_data_to_server(float currTemperature, float currHumidity, int currInsolation)
+void push_data_to_server(float currTemperature, float currHumidity, float currInsolation)
 {
     char *json = create_json(currTemperature, currHumidity, currInsolation);
     // TODO: add real path and decide about name
@@ -463,7 +464,7 @@ static void mqtt_app_start(void)
     esp_mqtt_client_start(mqtt_client);
 }
 
-bool shouldSendData(float currHumidity, float currTemperature, int currInsolation){
+bool shouldSendData(float currHumidity, float currTemperature, float currInsolation){
     int numOfReadsFromNVS = getConfigFromNVSBy("numOfReads");
     int numOfReads = numOfReadsFromNVS == -1 ? 10 : numOfReadsFromNVS;
 
@@ -511,7 +512,7 @@ extern "C" void app_main(void)
     }
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-
+    
     configure_led();
     configure_potentiometer();
     int analog_value = adc1_get_raw(ADC1_CHANNEL_0);
@@ -521,7 +522,8 @@ extern "C" void app_main(void)
         turn_on_led_for(analog_value);
     }
     setup_sleep();
-    initSensor();
+    initAM2320Sensor();
+    initBH1750Sensor();
     get_device_service_name(service_name, sizeof(service_name));
 
     char *ssidFromNVS = NULL;
@@ -529,17 +531,18 @@ extern "C" void app_main(void)
 
     if (getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS) == 0)
     {
-        provision_device(service_name);
+        saveCredentialsInNVS("NaszaSiec.NET_43D4A9", "5OhTC9RSHS");
+        //provision_device(service_name);
     }
 
     while (1)
     {
-        if (measure())
+        if (measureTemperatureAndHumidity() && measureInsolation())
         {
             getRecordsFromMiDevice();
             float currTemperature = getTemperature();
             float currHumidity = getHumidity();
-            int currInsolation = getInsolation();
+            float currInsolation = getInsolation();
 
             ESP_LOGI(TAG, "Current humidity: %f", currHumidity);
             ESP_LOGI(TAG, "Current temperature: %f", currTemperature);
@@ -553,7 +556,7 @@ extern "C" void app_main(void)
 
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
-                        saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100), (uint32_t)(currInsolation));
+                        saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100), (uint32_t)(currInsolation * 100));
                         ESP_LOGE(TAG, "Couldn't connect, restarting");
                         esp_restart();
                     }
@@ -566,13 +569,13 @@ extern "C" void app_main(void)
                     getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS);
                     if (start_wifi(ssidFromNVS, passwordFromNVS) != 1)
                     {
-                        saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100), (uint32_t)(currInsolation));
+                        saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100), (uint32_t)(currInsolation * 100));
                         ESP_LOGE(TAG, "Couldn't connect, restarting");
                         esp_restart();
                     }
                 }
 
-                check_update();
+                //check_update();
                 mqtt_event_group = xEventGroupCreate();
 
                 mqtt_app_start();
@@ -602,7 +605,7 @@ extern "C" void app_main(void)
             }
             else
             {
-                saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100), (uint32_t)(currInsolation));
+                saveRecordsInNVS((uint32_t)(currHumidity * 100), (uint32_t)(currTemperature * 100), (uint32_t)(currInsolation * 100));
             }
 
             esp_deep_sleep_start();

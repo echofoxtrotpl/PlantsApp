@@ -5,9 +5,8 @@
 uint8_t _buf[8];
 float _temperature;
 float _humidity;
-int _insolation;
 
-void initSensor()
+void initAM2320Sensor()
 {
     Wire.begin();
 }
@@ -22,12 +21,7 @@ float getHumidity()
     return _humidity;
 }
 
-float getInsolation()
-{
-    return _insolation;
-}
-
-void measureTemperatureAndHumidity()
+bool measureTemperatureAndHumidity()
 {
     // wybudzenie sensora
     Wire.beginTransmission(AM2320_ADDR);
@@ -68,17 +62,6 @@ void measureTemperatureAndHumidity()
     {
         _temperature = temperature / 10.0;
     }
-}
-
-void measureInsolation() {
-    // TODO: add sensor measurement
-    _insolation = 54321;
-}
-
-bool measure()
-{
-    measureTemperatureAndHumidity()
-    measureInsolation()
 
     return true;
 }

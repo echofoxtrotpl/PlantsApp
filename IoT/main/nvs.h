@@ -7,9 +7,9 @@ int saveCredentialsInNVS(const char *ssid, const char *password);
 
 int getCounterFromNVS();
 
-int saveRecordsInNVS(int humidity, int temperature);
+int saveRecordsInNVS(int humidity, int temperature, int insolation);
 
-int getRecordsFromNVS(int *humidity, int *temperature, int data_count);
+int getRecordsFromNVS(int *humidity, int *temperature, int *insolation, int data_count);
 
 int clearCounter();
 
