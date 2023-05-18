@@ -129,8 +129,7 @@ void check_update()
                         ESP_LOGI(TAG, "downloading and installing new firmware (%s)...\n", file->valuestring);
 
                         esp_http_client_config_t ota_client_config = {
-                            .url = file->valuestring
-                        };
+                            .url = file->valuestring};
                         esp_err_t ret = esp_https_ota(&ota_client_config);
                         if (ret == ESP_OK)
                         {
@@ -393,6 +392,7 @@ char *create_json(float currTemperature, float currHumidity, float currInsolatio
 
     // send all collected temperatures from NVS to MQTT
     int counter = getCounterFromNVS();
+    int interval = getConfigFromNVSBy("");
     for (int i = counter; i >= 1; --i)
     {
         getRecordsFromNVS(&humidity, &temperature, &insolation, i);
@@ -407,7 +407,7 @@ char *create_json(float currTemperature, float currHumidity, float currInsolatio
     }
 
     // add interval
-    cJSON_AddItemToObject(root, "interval", cJSON_CreateNumber((float)TIME_IN_US / 1000000));
+    cJSON_AddItemToObject(root, "interval", cJSON_CreateNumber());
 
     char *out = cJSON_Print(root);
     ESP_LOGI(TAG, "%s", out);
@@ -422,7 +422,7 @@ void push_data_to_server(float currTemperature, float currHumidity, float currIn
     char *json = create_json(currTemperature, currHumidity, currInsolation);
     // TODO: add real path and decide about name
     char URL[150] = "http://127.0.0.1:8880/weatherstation/api/stations/";
-    strcat(URL, service_name);
+    strcat(URL, "7f0275e4-56f1-4d79-8ad7-f159675818c5");
     strcat(URL, "/measurements");
     ESP_LOGI(TAG, "URL: %s", URL);
     esp_http_client_config_t config = {
@@ -459,7 +459,8 @@ static void mqtt_app_start(void)
     esp_mqtt_client_start(mqtt_client);
 }
 
-bool shouldSendData(float currHumidity, float currTemperature, float currInsolation){
+bool shouldSendData(float currHumidity, float currTemperature, float currInsolation)
+{
     int pushIntervalFromNVS = getConfigFromNVSBy("pushInterval");
     int pushInterval = pushIntervalFromNVS == -1 ? 10 : pushIntervalFromNVS;
 
@@ -484,13 +485,7 @@ bool shouldSendData(float currHumidity, float currTemperature, float currInsolat
     int counter = getCounterFromNVS();
     ESP_LOGI(TAG, "Counter in main: %d", counter);
 
-    return (counter != 0 && counter % pushInterval == 0) 
-            || currTemperature <= minTemperature 
-            || currTemperature >= maxTemperature 
-            || currHumidity <= minHumidity 
-            || currHumidity >= maxHumidity
-            || currInsolation <= minInsolation
-            || currInsolation >= maxInsolation;
+    return (counter != 0 && counter % pushInterval == 0) || currTemperature <= minTemperature || currTemperature >= maxTemperature || currHumidity <= minHumidity || currHumidity >= maxHumidity || currInsolation <= minInsolation || currInsolation >= maxInsolation;
 }
 
 extern "C" void app_main(void)
@@ -507,11 +502,11 @@ extern "C" void app_main(void)
     }
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    
+
     configure_led();
     configure_reset_credentials_button();
     turn_on_led_for(5000);
-    
+
     setup_sleep();
     initAM2320Sensor();
     initBH1750Sensor();
@@ -522,7 +517,7 @@ extern "C" void app_main(void)
 
     if (getCredentialsFromNVS(&ssidFromNVS, &passwordFromNVS) == 0)
     {
-        //saveCredentialsInNVS("NaszaSiec.NET_43D4A9", "5OhTC9RSHS");
+        // saveCredentialsInNVS("NaszaSiec.NET_43D4A9", "5OhTC9RSHS");
         provision_device(service_name);
     }
 
@@ -565,7 +560,7 @@ extern "C" void app_main(void)
                     }
                 }
 
-                //check_update();
+                // check_update();
                 mqtt_event_group = xEventGroupCreate();
 
                 mqtt_app_start();
